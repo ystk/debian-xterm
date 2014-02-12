@@ -1,26 +1,27 @@
-/* $XTermId: xutf8.c,v 1.9 2009/11/05 23:30:05 tom Exp $ */
+/* $XTermId: xutf8.c,v 1.11 2011/09/11 14:59:37 tom Exp $ */
 
 /*
-Copyright (c) 2001 by Juliusz Chroboczek
-
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in
-all copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
-THE SOFTWARE.
-*/
+ * Copyright (c) 2001 by Juliusz Chroboczek
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a
+ * copy of this software and associated documentation files (the
+ * "Software"), to deal in the Software without restriction, including
+ * without limitation the rights to use, copy, modify, merge, publish,
+ * distribute, sublicense, and/or sell copies of the Software, and to
+ * permit persons to whom the Software is furnished to do so, subject to
+ * the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
+ * OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+ * MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+ * IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY
+ * CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
+ * TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
+ * SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+ */
 
 #include <xterm.h>
 
@@ -73,22 +74,22 @@ utf8insert(char *dest, int c, int *len_return)
 	return;
 
     if (c <= 0x7F) {
-	dest[0] = c;
+	dest[0] = (char) c;
 	*len_return = 1;
     } else if (c <= 0x7FF) {
-	dest[0] = 0xC0 | ((c >> 6) & 0x1F);
-	dest[1] = 0x80 | (c & 0x3F);
+	dest[0] = (char) (0xC0 | ((c >> 6) & 0x1F));
+	dest[1] = (char) (0x80 | (c & 0x3F));
 	*len_return = 2;
     } else if (c <= 0xFFFF) {
-	dest[0] = 0xE0 | ((c >> 12) & 0x0F);
-	dest[1] = 0x80 | ((c >> 6) & 0x3F);
-	dest[2] = 0x80 | (c & 0x3F);
+	dest[0] = (char) (0xE0 | ((c >> 12) & 0x0F));
+	dest[1] = (char) (0x80 | ((c >> 6) & 0x3F));
+	dest[2] = (char) (0x80 | (c & 0x3F));
 	*len_return = 3;
     } else {
-	dest[0] = 0xF0 | ((c >> 18) & 0x07);
-	dest[1] = 0x80 | ((c >> 12) & 0x3f);
-	dest[2] = 0x80 | ((c >> 6) & 0x3f);
-	dest[3] = 0x80 | (c & 0x3f);
+	dest[0] = (char) (0xF0 | ((c >> 18) & 0x07));
+	dest[1] = (char) (0x80 | ((c >> 12) & 0x3f));
+	dest[2] = (char) (0x80 | ((c >> 6) & 0x3f));
+	dest[3] = (char) (0x80 | (c & 0x3f));
 	*len_return = 4;
     }
 }
@@ -132,7 +133,7 @@ utf8l1strcpy(char *d, char *s)
 		s++;		/* incorrect UTF-8 */
 		continue;
 	    } else if ((*s & 0x7C) == 0x40) {
-		*d++ = ((*s & 0x03) << 6) | (s[1] & 0x3F);
+		*d++ = (char) (((*s & 0x03) << 6) | (s[1] & 0x3F));
 		s += 2;
 	    } else {
 		*d++ = '?';

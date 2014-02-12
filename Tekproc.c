@@ -1,8 +1,7 @@
-/* $XTermId: Tekproc.c,v 1.182 2010/06/20 21:34:37 tom Exp $ */
+/* $XTermId: Tekproc.c,v 1.191 2011/12/27 10:19:51 tom Exp $ */
 
 /*
- *
- * Copyright 2001-2009,2010 by Thomas E. Dickey
+ * Copyright 2001-2010,2011 by Thomas E. Dickey
  *
  *                         All Rights Reserved
  *
@@ -108,6 +107,7 @@
 #include <data.h>
 #include <error.h>
 #include <menu.h>
+#include <xstrings.h>
 
 #define DefaultGCID XGContextFromGC(DefaultGC(XtDisplay(tw), DefaultScreen(XtDisplay(tw))))
 
@@ -397,7 +397,7 @@ TekPtyData(void)
     if (Tpushb == 0) {
 	if ((Tpushb = TypeMallocN(Char, 10)) == NULL
 	    || (Tline = TypeMallocN(XSegment, MAX_VTX)) == NULL) {
-	    fprintf(stderr, "%s: Not enough core for Tek mode\n", xterm_name);
+	    xtermWarning("Not enough core for Tek mode\n");
 	    if (Tpushb)
 		free(Tpushb);
 	    Tfailed = True;
@@ -600,7 +600,8 @@ Tekparse(TekWidget tw)
 	case CASE_BEAM_VEC:
 	    TRACE(("case: beam and vector selector\n"));
 	    /* only line types */
-	    if ((c &= LINEMASK) != tekscr->cur.linetype) {
+	    c = (IChar) (c & LINEMASK);
+	    if (c != tekscr->cur.linetype) {
 		if (nplot > 0)
 		    TekFlush(tw);
 		if (c <= TEKNUMLINES)
@@ -825,7 +826,7 @@ Tinput(TekWidget tw)
 		TCursorToggle(tw, TOGGLE);
 		Ttoggled = False;
 	    }
-	    if (XtAppPending(app_con) & XtIMXEvent) {
+	    if (xtermAppPending() & XtIMXEvent) {
 #ifdef VMS
 		Tselect_mask = X_mask;
 #else /* VMS */
@@ -1358,15 +1359,18 @@ static unsigned char *dashes[TEKNUMLINES] =
  */
 
 static void
-TekInitialize(Widget request GCC_UNUSED,
-	      Widget wnew GCC_UNUSED,
+TekInitialize(Widget wrequest,
+	      Widget new_arg,
 	      ArgList args GCC_UNUSED,
 	      Cardinal *num_args GCC_UNUSED)
 {
+    TekWidget request = (TekWidget) wrequest;
+    TekWidget wnew = (TekWidget) new_arg;
     Widget tekparent = SHELL_OF(wnew);
 #ifndef NO_ACTIVE_ICON
     TekScreen *screen = TekScreenOf((TekWidget) wnew);
 #endif
+    int n;
 
     TRACE(("TekInitialize\n"));
 
@@ -1379,13 +1383,23 @@ TekInitialize(Widget request GCC_UNUSED,
 		      HandleLeaveWindow, (Opaque) 0);
     XtAddEventHandler(tekparent, FocusChangeMask, False,
 		      HandleFocusChange, (Opaque) 0);
-    XtAddEventHandler(wnew, PropertyChangeMask, False,
+    XtAddEventHandler(new_arg, PropertyChangeMask, False,
 		      HandleBellPropertyChange, (Opaque) 0);
 
 #ifndef NO_ACTIVE_ICON
     screen->whichTwin = &(screen->fullTwin);
 #endif /* NO_ACTIVE_ICON */
 
+    for (n = 0; n < TEKNUMFONTS; ++n) {
+	wnew->tek.Tfont[n] = request->tek.Tfont[n];
+    }
+
+    init_Sres(tek.initial_font);
+    init_Sres(tek.gin_terminator_str);
+#if OPT_TOOLBAR
+    init_Ires(tek.tb_info.menu_height);
+    wnew->tek.tb_info.menu_bar = request->tek.tb_info.menu_bar;
+#endif
 }
 
 static void
@@ -1524,7 +1538,7 @@ TekRealize(Widget gw,
 
     XtWindow(tw) = TWindow(tekscr) =
 	XCreateWindow(XtDisplay(tw),
-		      XtWindow(SHELL_OF(tw)),
+		      VShellWindow(tw),
 		      tw->core.x, tw->core.y,
 		      tw->core.width, tw->core.height,
 		      BorderWidth(tw),
@@ -1557,8 +1571,8 @@ TekRealize(Widget gw,
     else if (TestGIN(GIN_TERM_EOT_STR) == 0)
 	tekscr->gin_terminator = GIN_TERM_EOT;
     else
-	fprintf(stderr, "%s: illegal GIN terminator setting \"%s\"\n",
-		xterm_name, tw->tek.gin_terminator_str);
+	xtermWarning("illegal GIN terminator setting \"%s\"\n",
+		     tw->tek.gin_terminator_str);
 
     gcv.graphics_exposures = True;	/* default */
     gcv.font = tw->tek.Tfont[tekscr->cur.fontsize]->fid;
@@ -1881,7 +1895,7 @@ TekCopy(TekWidget tw)
 	TScreen *screen = TScreenOf(xw);
 
 	TekLink *Tp;
-	char buf[32];
+	char buf[TIMESTAMP_LEN + 10];
 	char initbuf[5];
 	int tekcopyfd;
 

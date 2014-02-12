@@ -1,4 +1,4 @@
-/* $XTermId: os2main.c,v 1.265 2010/06/20 21:27:07 tom Exp $ */
+/* $XTermId: os2main.c,v 1.273 2011/12/27 10:36:58 tom Exp $ */
 
 /* removed all foreign stuff to get the code more clear (hv)
  * and did some rewrite for the obscure OS/2 environment
@@ -262,7 +262,6 @@ static jmp_buf env;
 
 static XtResource application_resources[] =
 {
-    Sres("name", "Name", xterm_name, DFT_TERMTYPE),
     Sres("iconGeometry", "IconGeometry", icon_geometry, NULL),
     Sres(XtNtitle, XtCTitle, title, NULL),
     Sres(XtNiconName, XtCIconName, icon_name, NULL),
@@ -274,8 +273,13 @@ static XtResource application_resources[] =
     Bres("messages", "Messages", messages, True),
     Ires("minBufSize", "MinBufSize", minBufSize, 4096),
     Ires("maxBufSize", "MaxBufSize", maxBufSize, 32768),
-    Sres("menuLocale", "MenuLocale", menuLocale, ""),
+    Sres("menuLocale", "MenuLocale", menuLocale, DEF_MENU_LOCALE),
+    Sres("omitTranslation", "OmitTranslation", omitTranslation, NULL),
     Sres("keyboardType", "KeyboardType", keyboardType, "unknown"),
+#if OPT_PRINT_ON_EXIT
+    Ires("printModeOnXError", "PrintModeOnXError", printModeOnXError, 0),
+    Sres("printFileOnXError", "PrintFileOnXError", printFileOnXError, NULL),
+#endif
 #if OPT_SUNPC_KBD
     Bres("sunKeyboard", "SunKeyboard", sunKeyboard, False),
 #endif
@@ -315,11 +319,15 @@ static XtResource application_resources[] =
 #endif
 #if OPT_MAXIMIZE
     Bres(XtNmaximized, XtCMaximized, maximized, False),
+    Sres(XtNfullscreen, XtCFullscreen, fullscreen_s, "off"),
 #endif
 };
 
 static String fallback_resources[] =
 {
+#if OPT_TOOLBAR
+    "*toolBar: false",
+#endif
     "*SimpleMenu*menuLabel.vertSpace: 100",
     "*SimpleMenu*HorizontalMargins: 16",
     "*SimpleMenu*Sme.height: 16",
@@ -511,6 +519,8 @@ static XrmOptionDescRec optionDescList[] = {
 #if OPT_MAXIMIZE
 {"-maximized",	"*maximized",	XrmoptionNoArg,		(XPointer) "on"},
 {"+maximized",	"*maximized",	XrmoptionNoArg,		(XPointer) "off"},
+{"-fullscreen",	"*fullscreen",	XrmoptionNoArg,		(XPointer) "on"},
+{"+fullscreen",	"*fullscreen",	XrmoptionNoArg,		(XPointer) "off"},
 #endif
 /* options that we process ourselves */
 {"-help",	NULL,		XrmoptionSkipNArgs,	(XPointer) NULL},
@@ -728,7 +738,7 @@ decode_keyvalue(char **ptr, int termcap)
     char *string = *ptr;
     int value = -1;
 
-    TRACE(("...decode '%s'\n", string));
+    TRACE(("decode_keyvalue '%s'\n", string));
     if (*string == '^') {
 	switch (*++string) {
 	case '?':
@@ -742,7 +752,7 @@ decode_keyvalue(char **ptr, int termcap)
 #endif
 #if defined(_PC_VDISABLE)
 		if (value == -1) {
-		    value = fpathconf(0, _PC_VDISABLE);
+		    value = (int) fpathconf(0, _PC_VDISABLE);
 		    if (value == -1) {
 			if (errno != 0)
 			    break;	/* skip this (error) */
@@ -763,7 +773,7 @@ decode_keyvalue(char **ptr, int termcap)
 	++string;
     } else if (termcap && (*string == '\\')) {
 	char *d;
-	int temp = strtol(string + 1, &d, 8);
+	int temp = (int) strtol(string + 1, &d, 8);
 	if (temp > 0 && d != string) {
 	    value = temp;
 	    string = d;
@@ -773,6 +783,7 @@ decode_keyvalue(char **ptr, int termcap)
 	++string;
     }
     *ptr = string;
+    TRACE(("...decode_keyvalue %#x\n", value));
     return value;
 }
 
@@ -790,8 +801,7 @@ Syntax(char *badOption)
     OptionHelp *list = sortedOpts(xtermOptions, optionDescList, XtNumber(optionDescList));
     int col;
 
-    fprintf(stderr, "%s:  bad command line option \"%s\"\r\n\n",
-	    ProgramName, badOption);
+    xtermWarning("bad command line option \"%s\"\r\n\n", badOption);
 
     fprintf(stderr, "usage:  %s", ProgramName);
     col = 8 + (int) strlen(ProgramName);
@@ -956,33 +966,22 @@ main(int argc, char **argv ENVP_ARG)
     TRACE_ARGV("Before XtOpenApplication", argv);
     if (argc > 1) {
 	int n;
-	unsigned unique = 2;
-	Bool quit = True;
+	size_t unique = 2;
+	Bool quit = False;
 
 	for (n = 1; n < argc; n++) {
 	    TRACE(("parsing %s\n", argv[n]));
 	    if (abbrev(argv[n], "-version", unique)) {
 		Version();
+		quit = True;
 	    } else if (abbrev(argv[n], "-help", unique)) {
 		Help();
-	    } else if (abbrev(argv[n], "-class", 3)) {
+		quit = True;
+	    } else if (abbrev(argv[n], "-class", (size_t) 3)) {
 		if ((my_class = argv[++n]) == 0) {
 		    Help();
-		} else {
-		    quit = False;
+		    quit = True;
 		}
-		unique = 3;
-	    } else {
-#if OPT_COLOR_RES
-		if (abbrev(argv[n], "-reverse", 2)
-		    || !strcmp("-rv", argv[n])) {
-		    reversed = True;
-		} else if (!strcmp("+rv", argv[n])) {
-		    reversed = False;
-		}
-#endif
-		quit = False;
-		unique = 3;
 	    }
 	}
 	if (quit)
@@ -1003,9 +1002,7 @@ main(int argc, char **argv ENVP_ARG)
     ttydev = TypeMallocN(char, PTMS_BUFSZ);
     ptydev = TypeMallocN(char, PTMS_BUFSZ);
     if (!ttydev || !ptydev) {
-	fprintf(stderr,
-		"%s:  unable to allocate memory for ttydev or ptydev\n",
-		ProgramName);
+	xtermWarning("unable to allocate memory for ttydev or ptydev\n");
 	exit(1);
     }
     strcpy(ttydev, TTYDEV);
@@ -1050,6 +1047,11 @@ main(int argc, char **argv ENVP_ARG)
 			      application_resources,
 			      XtNumber(application_resources), NULL, 0);
     TRACE_XRES();
+#if OPT_MAXIMIZE
+    resource.fullscreen = extendedBoolean(resource.fullscreen_s,
+					  tblFullscreen,
+					  XtNumber(tblFullscreen));
+#endif
 
     /*
      * ICCCM delete_window.
@@ -1062,8 +1064,7 @@ main(int argc, char **argv ENVP_ARG)
     if (resource.tty_modes) {
 	int n = parse_tty_modes(resource.tty_modes, ttymodelist);
 	if (n < 0) {
-	    fprintf(stderr, "%s:  bad tty modes \"%s\"\n",
-		    ProgramName, resource.tty_modes);
+	    xtermWarning("bad tty modes \"%s\"\n", resource.tty_modes);
 	} else if (n > 0) {
 	    override_tty_modes = True;
 	}
@@ -1071,14 +1072,10 @@ main(int argc, char **argv ENVP_ARG)
 #if OPT_ZICONBEEP
     if (resource.zIconBeep > 100 || resource.zIconBeep < -100) {
 	resource.zIconBeep = 0;	/* was 100, but I prefer to defaulting off. */
-	fprintf(stderr,
-		"a number between -100 and 100 is required for zIconBeep.  0 used by default\n");
+	xtermWarning("a number between -100 and 100 is required for zIconBeep.  0 used by default\n");
     }
 #endif /* OPT_ZICONBEEP */
     hold_screen = resource.hold_screen ? 1 : 0;
-    xterm_name = resource.xterm_name;
-    if (strcmp(xterm_name, "-") == 0)
-	xterm_name = DFT_TERMTYPE;
     if (resource.icon_geometry != NULL) {
 	int scr, junk;
 	int ix, iy;
@@ -1115,10 +1112,10 @@ main(int argc, char **argv ENVP_ARG)
 	switch (argv[0][1]) {
 	case 'h':		/* -help */
 	    Help();
-	    continue;
+	    exit(0);
 	case 'v':		/* -version */
 	    Version();
-	    continue;
+	    exit(0);
 	case 'C':
 	    {
 		struct stat sbuf;
@@ -1259,10 +1256,10 @@ main(int argc, char **argv ENVP_ARG)
 	    int n;
 	    char **c;
 	    for (n = 0, c = command_to_exec; *c; n++, c++) ;
-	    c = TypeMallocN(char *, n + 3 + u);
+	    c = TypeMallocN(char *, (unsigned) (n + 3 + u));
 	    if (c == NULL)
 		SysError(ERROR_LUMALLOC);
-	    memcpy(c + 2 + u, command_to_exec, (n + 1) * sizeof(char *));
+	    memcpy(c + 2 + u, command_to_exec, (unsigned) (n + 1) * sizeof(char *));
 	    c[0] = term->misc.localefilter;
 	    if (u) {
 		c[1] = "-encoding";
@@ -1289,11 +1286,11 @@ main(int argc, char **argv ENVP_ARG)
 	/* Set up stderr properly.  Opening this log file cannot be
 	   done securely by a privileged xterm process (although we try),
 	   so the debug feature is disabled by default. */
-	char dbglogfile[45];
+	char dbglogfile[TIMESTAMP_LEN + 20];
 	int i = -1;
 	if (debug) {
 	    timestamp_filename(dbglogfile, "xterm.debug.log.");
-	    if (creat_as(save_ruid, save_rgid, False, dbglogfile, 0666) > 0) {
+	    if (creat_as(save_ruid, save_rgid, False, dbglogfile, 0600) > 0) {
 		i = open(dbglogfile, O_WRONLY | O_TRUNC);
 	    }
 	}
@@ -1353,6 +1350,7 @@ main(int argc, char **argv ENVP_ARG)
     }
 #endif
 
+    TRACE(("checking winToEmbedInto %#lx\n", winToEmbedInto));
     if (winToEmbedInto != None) {
 	XtRealizeWidget(toplevel);
 	/*
@@ -1360,23 +1358,34 @@ main(int argc, char **argv ENVP_ARG)
 	 * winToEmbedInto in order to verify that it exists, but I'm still not
 	 * certain what is the best way to do it -GPS
 	 */
+	TRACE(("...reparenting toplevel %#lx into %#lx\n",
+	       XtWindow(toplevel),
+	       winToEmbedInto));
 	XReparentWindow(XtDisplay(toplevel),
 			XtWindow(toplevel),
 			winToEmbedInto, 0, 0);
     }
 #if OPT_COLOR_RES
-    TRACE(("checking resource values rv %s fg %s, bg %s\n",
-	   BtoS(term->misc.re_verse0),
+    TRACE(("checking reverseVideo before rv %s fg %s, bg %s\n",
+	   term->misc.re_verse0 ? "reverse" : "normal",
 	   NonNull(TScreenOf(term)->Tcolors[TEXT_FG].resource),
 	   NonNull(TScreenOf(term)->Tcolors[TEXT_BG].resource)));
 
-    if ((reversed && term->misc.re_verse0)
-	&& ((TScreenOf(term)->Tcolors[TEXT_FG].resource
-	     && !isDefaultForeground(TScreenOf(term)->Tcolors[TEXT_FG].resource))
-	    || (TScreenOf(term)->Tcolors[TEXT_BG].resource
-		&& !isDefaultBackground(TScreenOf(term)->Tcolors[TEXT_BG].resource))
-	))
-	ReverseVideo(term);
+    if (term->misc.re_verse0) {
+	if (isDefaultForeground(TScreenOf(term)->Tcolors[TEXT_FG].resource)
+	    && isDefaultBackground(TScreenOf(term)->Tcolors[TEXT_BG].resource)) {
+	    TScreenOf(term)->Tcolors[TEXT_FG].resource = x_strdup(XtDefaultBackground);
+	    TScreenOf(term)->Tcolors[TEXT_BG].resource = x_strdup(XtDefaultForeground);
+	} else {
+	    ReverseVideo(term);
+	}
+	term->misc.re_verse = True;
+	update_reversevideo();
+	TRACE(("updated  reverseVideo after  rv %s fg %s, bg %s\n",
+	       term->misc.re_verse ? "reverse" : "normal",
+	       NonNull(TScreenOf(term)->Tcolors[TEXT_FG].resource),
+	       NonNull(TScreenOf(term)->Tcolors[TEXT_BG].resource)));
+    }
 #endif /* OPT_COLOR_RES */
 
 #if OPT_MAXIMIZE
@@ -1418,7 +1427,7 @@ pty_search(int *pty)
 #endif
 	    return 0;
 	} else {
-	    fprintf(stderr, "Unable to open %s, errno=%d\n", ptydev, errno);
+	    xtermWarning("Unable to open %s, errno=%d\n", ptydev, errno);
 	}
     }
     return 1;
@@ -1471,7 +1480,7 @@ static char *tekterm[] =
  * The VT420 has up to 48 lines on the screen.
  */
 
-static char *vtterm[] =
+static const char *vtterm[] =
 {
 #ifdef USE_X11TERM
     "x11term",			/* for people who want special term name */
@@ -1523,9 +1532,8 @@ set_owner(char *device, uid_t uid, gid_t gid, mode_t mode)
 	why = errno;
 	if (why != ENOENT
 	    && save_ruid == 0) {
-	    fprintf(stderr, "Cannot chown %s to %ld,%ld: %s\n",
-		    device, (long) uid, (long) gid,
-		    strerror(why));
+	    xtermPerror("Cannot chown %s to %ld,%ld",
+			device, (long) uid, (long) gid);
 	}
     }
 }
@@ -1688,22 +1696,30 @@ spawnXTerm(XtermWidget xw)
      * entry is not found.
      */
     ok_termcap = True;
-    if (!get_termcap(TermName = resource.term_name)) {
-	char *last = NULL;
-	TermName = *envnew;
+    if (!get_termcap(xw, TermName = resource.term_name)) {
+	const char *last = NULL;
+	char *next;
+
+	TermName = x_strdup(*envnew);
 	ok_termcap = False;
 	while (*envnew != NULL) {
-	    if ((last == NULL || strcmp(last, *envnew))
-		&& get_termcap(*envnew)) {
-		TermName = *envnew;
-		ok_termcap = True;
-		break;
+	    if (last == NULL || strcmp(last, *envnew)) {
+		next = x_strdup(*envnew);
+		if (get_termcap(xw, next)) {
+		    free(TermName);
+		    TermName = next;
+		    ok_termcap = True;
+		    break;
+		} else {
+		    free(next);
+		}
 	    }
 	    last = *envnew;
 	    envnew++;
 	}
     }
     if (ok_termcap) {
+	resource.term_name = TermName;
 	resize_termcap(xw);
     }
 
@@ -1755,7 +1771,7 @@ spawnXTerm(XtermWidget xw)
 	     */
 	    if ((ttyfd = open(ttydev, O_RDWR)) < 0) {
 		/* dumm gelaufen */
-		fprintf(stderr, "Cannot open slave side of PTY\n");
+		xtermWarning("Cannot open slave side of PTY\n");
 		exit(1);
 	    }
 
@@ -1795,8 +1811,7 @@ spawnXTerm(XtermWidget xw)
 		if (Console) {
 		    int on = 1;
 		    if (ioctl(ttyfd, TIOCCONS, (char *) &on) == -1)
-			fprintf(stderr, "%s: cannot open console: %s\n",
-				ProgramName, strerror(errno));
+			xtermPerror("cannot open console");
 		}
 	    }
 
@@ -1810,8 +1825,8 @@ spawnXTerm(XtermWidget xw)
 
 	    xtermCopyEnv(gblenvp);
 
-	    xtermSetenv("TERM", TermName);
-	    if (!TermName)
+	    xtermSetenv("TERM", resource.term_name);
+	    if (!resource.term_name)
 		*get_tcap_buffer(xw) = 0;
 
 	    sprintf(buf, "%lu",
@@ -1831,7 +1846,7 @@ spawnXTerm(XtermWidget xw)
 	    /* dup the tty */
 	    for (i = 0; i <= 2; i++)
 		if (i != ttyfd) {
-		    (void) close(i);
+		    IGNORE_RC(close(i));
 		    IGNORE_RC(dup(ttyfd));
 		}
 
@@ -1847,10 +1862,10 @@ spawnXTerm(XtermWidget xw)
 		       handshake.rows, handshake.cols));
 		set_max_row(screen, handshake.rows);
 		set_max_col(screen, handshake.cols);
-		TTYSIZE_ROWS(ts) = MaxRows(screen);
-		TTYSIZE_COLS(ts) = MaxCols(screen);
-		ts.ws_xpixel = FullWidth(screen);
-		ts.ws_ypixel = FullHeight(screen);
+		TTYSIZE_ROWS(ts) = (ttySize_t) MaxRows(screen);
+		TTYSIZE_COLS(ts) = (ttySize_t) MaxCols(screen);
+		ts.ws_xpixel = (ttySize_t) FullWidth(screen);
+		ts.ws_ypixel = (ttySize_t) FullHeight(screen);
 	    }
 
 	    sprintf(numbuf, "%d", MaxCols(screen));
@@ -1886,11 +1901,8 @@ spawnXTerm(XtermWidget xw)
 			    xtermFindShell(*command_to_exec_with_luit, False));
 		TRACE(("spawning command \"%s\"\n", *command_to_exec_with_luit));
 		execvp(*command_to_exec_with_luit, command_to_exec_with_luit);
-		/* print error message on screen */
-		fprintf(stderr, "%s: Can't execvp %s: %s\n",
-			ProgramName, *command_to_exec_with_luit, strerror(errno));
-		fprintf(stderr, "%s: cannot support your locale.\n",
-			ProgramName);
+		xtermPerror("Can't execvp %s", *command_to_exec_with_luit);
+		xtermWarning("cannot support your locale.\n");
 	    }
 #endif
 	    if (command_to_exec) {
@@ -1900,8 +1912,7 @@ spawnXTerm(XtermWidget xw)
 		execvpe(*command_to_exec, command_to_exec, gblenvp);
 
 		/* print error message on screen */
-		fprintf(stderr, "%s: Can't execvp %s\n",
-			ProgramName, *command_to_exec);
+		xtermWarning("Can't execvp %s\n", *command_to_exec);
 	    }
 
 	    /* use a layered mechanism to find a shell */
@@ -1931,14 +1942,12 @@ spawnXTerm(XtermWidget xw)
 		execvpe(exargv[0], exargv, gblenvp);
 
 		/* print error message on screen */
-		fprintf(stderr, "%s: Can't execvp %s\n",
-			ProgramName, *command_to_exec);
+		xtermWarning("Can't execvp %s\n", *command_to_exec);
 	    } else {
 		execlpe(ptr, shname, 0, gblenvp);
 
 		/* Exec failed. */
-		fprintf(stderr, "%s: Could not exec %s!\n",
-			ProgramName, ptr);
+		xtermWarning("Could not exec %s!\n", ptr);
 	    }
 	    sleep(5);
 
@@ -2018,7 +2027,7 @@ Exit(int n)
 #endif
 	    TRACE(("closed display\n"));
 	}
-	TRACE((0));
+	TRACE_CLOSE();
     }
 #endif
 
@@ -2091,7 +2100,7 @@ parse_tty_modes(char *s, struct _xttymodes *modelist)
     int count = 0;
 
     TRACE(("parse_tty_modes\n"));
-    while (1) {
+    for (;;) {
 	size_t len;
 
 	while (*s && isascii(CharOf(*s)) && isspace(CharOf(*s)))

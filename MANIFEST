@@ -1,4 +1,4 @@
-MANIFEST for xterm-260, version xterm-260
+MANIFEST for xterm-278, version xterm-278
 --------------------------------------------------------------------------------
 MANIFEST                        this file
 256colres.h                     resource-definitions for 256-color mode
@@ -36,12 +36,12 @@ config.guess                    configure script: guess the system type
 config.sub                      configure script: validate system type
 configure                       generated
 configure.in                    template for generating configure script
-configure                       Configuration script for UNIX
 ctlseqs.ms                      documentation: Xterm Control Sequences
 ctlseqs.txt                     generated rendition of ctlseqs.ms
 cursor.c                        VT100 low-level cursor movement
 data.c                          global data declarations
 data.h                          global data external-definitions
+df-install.in                   utility script for desktop-files
 doublechr.c                     VT100 double-size character support
 error.h                         error-code definitions for 'xterm'
 fontutils.c                     xterm functions for (re)loading fonts
@@ -60,7 +60,7 @@ main.h                          default definitions for 'xterm'
 make.com                        build-script for VMS port of 'xterm'
 menu.c                          popup/pulldown menus for 'xterm'
 menu.h                          interface of menu.c
-minstall.sh                     script for installing manpages
+minstall.in                     script for installing manpages
 misc.c                          miscellaneous utility functions for 'xterm'
 os2main.c                       main program for OS/2 EMX port of 'xterm'
 plink.sh                        script to prune unneeded libraries from link
@@ -116,6 +116,21 @@ icons/xterm_32x32.xcf           gimp file, for editing 32x32 icon
 icons/xterm_32x32.xpm           32x32 monochrome icon
 icons/xterm_48x48.xcf           gimp file, for editing 48x48 icon
 icons/xterm_48x48.xpm           48x48 monochrome icon
+package/debian                  subdirectory
+package/debian/changelog        build-script
+package/debian/color.sed        build-script
+package/debian/compat           build-script
+package/debian/control          build-script
+package/debian/copyright        build-script
+package/debian/rules            build-script
+package/debian/source           subdirectory
+package/debian/source/format    build-script
+package/debian                  subdirectory
+package/debian/watch            build-script
+package/debian/xterm-dev.docs   build-script
+package/debian/xterm-xres.sed   build-script
+package                         subdirectory
+package/xterm.spec              build-script
 tektests                        subdirectory
 tektests/aitest.tek             tek4014 demo: draw a globe
 tektests/dmerc.tek              tek4014 demo: draws a Mercator projection with orbit
@@ -140,6 +155,7 @@ vttests/88colors2.pl            sample script showing 88-colors
 vttests/8colors.sh              test-script to illustrate 8-colors
 vttests/acolors.sh              demonstrate changing the ANSI colors
 vttests/doublechars.sh          test script to demonstrate doublesize chars
+vttests/dynamic.pl              demo for dynamic colors
 vttests/dynamic.sh              script to illustrate the dynamic colors control sequence
 vttests/dynamic2.sh             complete example of dynamic colors
 vttests/fonts.sh                script to demonstrate font-switching sequences

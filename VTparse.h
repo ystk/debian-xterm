@@ -1,7 +1,7 @@
-/* $XTermId: VTparse.h,v 1.52 2010/06/15 10:58:13 tom Exp $ */
+/* $XTermId: VTparse.h,v 1.55 2011/12/04 18:30:20 tom Exp $ */
 
 /*
- * Copyright 2002-2009,2010 by Thomas E. Dickey
+ * Copyright 2002-2010,2011 by Thomas E. Dickey
  *
  *                         All Rights Reserved
  *
@@ -87,6 +87,7 @@ extern Const PARSE_T scrtable[];
 extern Const PARSE_T scs96table[];
 extern Const PARSE_T scstable[];
 extern Const PARSE_T sos_table[];
+extern Const PARSE_T csi_dec_dollar_table[];
 
 #if OPT_DEC_LOCATOR
 extern Const PARSE_T csi_tick_table[];
@@ -262,5 +263,14 @@ extern Const PARSE_T esc_pct_table[];
 #define CASE_DECSMBV 141
 #define CASE_DECSWBV 142
 #define CASE_DECLL 143
+#define CASE_DECRQM 144
+#define CASE_RQM 145
+#define CASE_CSI_DEC_DOLLAR_STATE 146
+#define CASE_SL 147
+#define CASE_SR 148
+#define CASE_DECDC 149
+#define CASE_DECIC 150
+#define CASE_DECBI 151
+#define CASE_DECFI 152
 
 #endif /* included_VTparse_h */

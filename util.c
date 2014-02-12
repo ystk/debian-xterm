@@ -1,7 +1,7 @@
-/* $XTermId: util.c,v 1.538 2010/06/15 08:17:36 tom Exp $ */
+/* $XTermId: util.c,v 1.554 2011/12/30 21:56:42 tom Exp $ */
 
 /*
- * Copyright 1999-2009,2010 by Thomas E. Dickey
+ * Copyright 1999-2010,2011 by Thomas E. Dickey
  *
  *                         All Rights Reserved
  *
@@ -113,13 +113,13 @@ DamagedCells(TScreen * screen, unsigned n, int *klp, int *krp, int row, int col)
 	int kl = col;
 	int kr = col + nn;
 
-	if (kr >= ld->lineSize) {
+	if (kr >= (int) ld->lineSize) {
 	    nn = (ld->lineSize - col - 1);
 	    kr = col + nn;
 	}
 
 	if (nn > 0) {
-	    assert(kl < ld->lineSize);
+	    assert(kl < (int) ld->lineSize);
 	    if (ld->charData[kl] == HIDDEN_CHAR) {
 		while (kl > 0) {
 		    if (ld->charData[--kl] != HIDDEN_CHAR) {
@@ -578,6 +578,70 @@ xtermScroll(XtermWidget xw, int amount)
 
     screen->cursor_busy -= 1;
     return;
+}
+
+/*
+ * This is from ISO 6429, not found in any of DEC's terminals.
+ */
+void
+xtermScrollLR(XtermWidget xw, int amount, Bool toLeft)
+{
+    if (amount > 0) {
+	xtermColScroll(xw, amount, toLeft, 0);
+    }
+}
+
+/*
+ * Implement DECBI/DECFI (back/forward column index)
+ */
+void
+xtermColIndex(XtermWidget xw, Bool toLeft)
+{
+    TScreen *screen = TScreenOf(xw);
+
+    if (toLeft) {
+	if (screen->cur_col) {
+	    CursorBack(xw, 1);
+	} else {
+	    xtermColScroll(xw, 1, False, 0);
+	}
+    } else {
+	if (screen->cur_col < screen->max_col) {
+	    CursorForward(screen, 1);
+	} else {
+	    xtermColScroll(xw, 1, True, 0);
+	}
+    }
+}
+
+/*
+ * Implement DECDC/DECIC (delete/insert column)
+ */
+void
+xtermColScroll(XtermWidget xw, int amount, Bool toLeft, int at_col)
+{
+    if (amount > 0) {
+	TScreen *screen = TScreenOf(xw);
+	int save_row = screen->cur_row;
+	int save_col = screen->cur_col;
+	int row;
+
+	screen->cur_col = at_col;
+	if (toLeft) {
+	    for (row = 0; row <= screen->max_row; row++) {
+		screen->cur_row = row;
+		ScrnDeleteChar(xw, (unsigned) amount);
+	    }
+	} else {
+	    for (row = 0; row <= screen->max_row; row++) {
+		screen->cur_row = row;
+		ScrnInsertChar(xw, (unsigned) amount);
+	    }
+	}
+	screen->cur_row = save_row;
+	screen->cur_col = save_col;
+	xtermRepaint(xw);
+    }
 }
 
 /*
@@ -1250,7 +1314,7 @@ ClearInLine2(XtermWidget xw, int flags, int row, int col, unsigned len)
 	} while (!done);
 
 	screen->protected_mode = saved_mode;
-	if (len <= 0) {
+	if ((int) len <= 0) {
 	    return 0;
 	}
     }
@@ -1343,6 +1407,9 @@ ClearRight(XtermWidget xw, int n)
 
     /* with the right part cleared, we can't be wrapping */
     LineClrWrapped(ld);
+    if (screen->show_wrap_marks) {
+	ShowWrapMarks(xw, screen->cur_row, ld);
+    }
     screen->do_wrap = False;
 }
 
@@ -1515,7 +1582,7 @@ CopyWait(XtermWidget xw)
     XEvent reply;
     XEvent *rep = &reply;
 
-    while (1) {
+    for (;;) {
 	XWindowEvent(screen->display, VWindow(screen),
 		     ExposureMask, &reply);
 	switch (reply.type) {
@@ -1625,6 +1692,15 @@ vertical_copy_area(XtermWidget xw,
 		  (unsigned) Width(screen),
 		  (unsigned) (nlines * FontHeight(screen)),
 		  src_x, src_y - amount * FontHeight(screen));
+	if (screen->show_wrap_marks) {
+	    LineData *ld;
+	    int row;
+	    for (row = firstline; row < firstline + nlines; ++row) {
+		if ((ld = getLineData(screen, row)) != 0) {
+		    ShowWrapMarks(xw, row, ld);
+		}
+	    }
+	}
     }
 }
 
@@ -1710,7 +1786,7 @@ set_background(XtermWidget xw, int color GCC_UNUSED)
     Pixel c = getXtermBackground(xw, xw->flags, color);
 
     TRACE(("set_background(%d) %#lx\n", color, c));
-    XSetWindowBackground(screen->display, VShellWindow, c);
+    XSetWindowBackground(screen->display, VShellWindow(xw), c);
     XSetWindowBackground(screen->display, VWindow(screen), c);
 }
 
@@ -1816,9 +1892,12 @@ ChangeColors(XtermWidget xw, ScrnColors * pNew)
 	/* no repaint needed */
     } else if ((T_COLOR(screen, TEXT_CURSOR) == T_COLOR(screen, TEXT_FG)) &&
 	       (COLOR_DEFINED(pNew, TEXT_FG))) {
-	T_COLOR(screen, TEXT_CURSOR) = COLOR_VALUE(pNew, TEXT_FG);
-	TRACE(("... TEXT_CURSOR: %#lx\n", T_COLOR(screen, TEXT_CURSOR)));
-	repaint = screen->Vshow;
+	if (T_COLOR(screen, TEXT_CURSOR) != COLOR_VALUE(pNew, TEXT_FG)) {
+	    T_COLOR(screen, TEXT_CURSOR) = COLOR_VALUE(pNew, TEXT_FG);
+	    TRACE(("... TEXT_CURSOR: %#lx\n", T_COLOR(screen, TEXT_CURSOR)));
+	    if (screen->Vshow)
+		repaint = True;
+	}
     }
 
     if (COLOR_DEFINED(pNew, TEXT_FG)) {
@@ -1849,14 +1928,20 @@ ChangeColors(XtermWidget xw, ScrnColors * pNew)
     }
 #if OPT_HIGHLIGHT_COLOR
     if (COLOR_DEFINED(pNew, HIGHLIGHT_BG)) {
-	T_COLOR(screen, HIGHLIGHT_BG) = COLOR_VALUE(pNew, HIGHLIGHT_BG);
-	TRACE(("... HIGHLIGHT_BG: %#lx\n", T_COLOR(screen, HIGHLIGHT_BG)));
-	repaint = screen->Vshow;
+	if (T_COLOR(screen, HIGHLIGHT_BG) != COLOR_VALUE(pNew, HIGHLIGHT_BG)) {
+	    T_COLOR(screen, HIGHLIGHT_BG) = COLOR_VALUE(pNew, HIGHLIGHT_BG);
+	    TRACE(("... HIGHLIGHT_BG: %#lx\n", T_COLOR(screen, HIGHLIGHT_BG)));
+	    if (screen->Vshow)
+		repaint = True;
+	}
     }
     if (COLOR_DEFINED(pNew, HIGHLIGHT_FG)) {
-	T_COLOR(screen, HIGHLIGHT_FG) = COLOR_VALUE(pNew, HIGHLIGHT_FG);
-	TRACE(("... HIGHLIGHT_FG: %#lx\n", T_COLOR(screen, HIGHLIGHT_FG)));
-	repaint = screen->Vshow;
+	if (T_COLOR(screen, HIGHLIGHT_FG) != COLOR_VALUE(pNew, HIGHLIGHT_FG)) {
+	    T_COLOR(screen, HIGHLIGHT_FG) = COLOR_VALUE(pNew, HIGHLIGHT_FG);
+	    TRACE(("... HIGHLIGHT_FG: %#lx\n", T_COLOR(screen, HIGHLIGHT_FG)));
+	    if (screen->Vshow)
+		repaint = True;
+	}
     }
 #endif
 
@@ -1897,7 +1982,9 @@ ChangeColors(XtermWidget xw, ScrnColors * pNew)
     if (COLOR_DEFINED(pNew, TEXT_FG) ||
 	COLOR_DEFINED(pNew, TEXT_BG) ||
 	COLOR_DEFINED(pNew, TEXT_CURSOR)) {
-	set_cursor_gcs(xw);
+	if (set_cursor_gcs(xw) && screen->Vshow) {
+	    repaint = True;
+	}
     }
 #if OPT_TEK4014
     if (COLOR_DEFINED(pNew, TEK_FG) ||
@@ -2584,11 +2671,14 @@ xtermSetClipRectangles(Display * dpy,
 #define beginXftClipping(screen,px,py,plength) \
 	    if (screen->use_clipping && (FontWidth(screen) > 2)) { \
 		XRectangle clip; \
+		double adds = (screen->scale_height - 1.0) * FontHeight(screen); \
+		int height = dimRound(adds + FontHeight(screen)); \
+		int descnt = dimRound(adds / 2.0) + FontDescent(screen); \
 		int clip_x = px; \
-		int clip_y = py - FontHeight(screen) + FontDescent(screen); \
+		int clip_y = py - height + descnt; \
 		clip.x = 0; \
 		clip.y = 0; \
-		clip.height = (unsigned short) (FontHeight(screen)); \
+		clip.height = (unsigned short) height; \
 		clip.width = (unsigned short) (FontWidth(screen) * plength); \
 		XftDrawSetClipRectangles (screen->renderDraw, \
 					  clip_x, clip_y, \
@@ -3140,6 +3230,9 @@ drawXtermText(XtermWidget xw,
 	   screen->cursor_state == OFF ? ' ' : '*',
 	   y, x, chrset, len,
 	   visibleIChars(text, len)));
+    if (screen->scale_height != 1.0) {
+	xtermFillCells(xw, flags, gc, x, y, (Cardinal) len);
+    }
     y += FontAscent(screen);
 
 #if OPT_WIDE_CHARS
@@ -3380,7 +3473,7 @@ getXtermSizeHints(XtermWidget xw)
     TScreen *screen = TScreenOf(xw);
     long supp;
 
-    if (!XGetWMNormalHints(screen->display, XtWindow(SHELL_OF(xw)),
+    if (!XGetWMNormalHints(screen->display, VShellWindow(xw),
 			   &xw->hints, &supp))
 	memset(&xw->hints, 0, sizeof(xw->hints));
     TRACE_HINTS(&(xw->hints));
@@ -3766,8 +3859,8 @@ init_keyboard_type(XtermWidget xw, xtermKeyboardType type, Bool set)
 	   visibleKeyboardType(xw->keyboard.type)));
     if (set) {
 	if (wasSet) {
-	    fprintf(stderr, "Conflicting keyboard type option (%u/%u)\n",
-		    xw->keyboard.type, type);
+	    xtermWarning("Conflicting keyboard type option (%u/%u)\n",
+			 xw->keyboard.type, type);
 	}
 	xw->keyboard.type = type;
 	wasSet = True;
@@ -3837,9 +3930,8 @@ decode_keyboard_type(XtermWidget xw, XTERM_RESOURCE * rp)
 	    init_keyboard_type(xw, table[n].type, FLAG(n));
 	}
 	if (!found) {
-	    fprintf(stderr,
-		    "KeyboardType resource \"%s\" not found\n",
-		    rp->keyboardType);
+	    xtermWarning("KeyboardType resource \"%s\" not found\n",
+			 rp->keyboardType);
 	}
     }
 #undef DATA
@@ -3946,3 +4038,58 @@ decode_wcwidth(XtermWidget xw)
     }
 }
 #endif
+
+/*
+ * Extend a (normally) boolean resource value by checking for additional values
+ * which will be mapped into true/false.
+ */
+int
+extendedBoolean(const char *value, FlagList * table, Cardinal limit)
+{
+    int result = -1;
+    long check;
+    char *next;
+    Cardinal n;
+
+    if ((x_strcasecmp(value, "true") == 0)
+	|| (x_strcasecmp(value, "yes") == 0)
+	|| (x_strcasecmp(value, "on") == 0)) {
+	result = True;
+    } else if ((x_strcasecmp(value, "false") == 0)
+	       || (x_strcasecmp(value, "no") == 0)
+	       || (x_strcasecmp(value, "off") == 0)) {
+	result = False;
+    } else if ((check = strtol(value, &next, 0)) >= 0 && *next == '\0') {
+	if (check >= (long) limit)
+	    check = True;
+	result = (int) check;
+    } else {
+	for (n = 0; n < limit; ++n) {
+	    if (x_strcasecmp(value, table[n].name) == 0) {
+		result = table[n].code;
+		break;
+	    }
+	}
+    }
+
+    if (result < 0) {
+	xtermWarning("Unrecognized keyword: %s\n", value);
+	result = False;
+    }
+
+    TRACE(("extendedBoolean(%s) = %d\n", value, result));
+    return result;
+}
+
+/*
+ * Something like round() from math library, but round() is less widely-used
+ * than xterm.  Also, there are no negative numbers to complicate this.
+ */
+int
+dimRound(double value)
+{
+    int result = (int) value;
+    if (result < value)
+	++result;
+    return result;
+}

@@ -1,8 +1,7 @@
-/* $XTermId: menu.h,v 1.119 2010/01/04 22:16:06 tom Exp $ */
+/* $XTermId: menu.h,v 1.126 2011/08/28 21:15:40 tom Exp $ */
 
 /*
- *
- * Copyright 1999-2009,2010 by Thomas E. Dickey
+ * Copyright 1999-2010,2011 by Thomas E. Dickey
  *
  *                         All Rights Reserved
  *
@@ -29,6 +28,7 @@
  * holders shall not be used in advertising or otherwise to promote the
  * sale, use or other dealings in this Software without prior written
  * authorization.
+ *
  *
  * Copyright 1989  The Open Group
  *
@@ -58,6 +58,7 @@
 
 #ifndef included_menu_h
 #define included_menu_h
+/* *INDENT-OFF* */
 
 #include <xterm.h>
 
@@ -75,6 +76,7 @@ extern MenuEntry tekMenuEntries[];
 
 extern void Handle8BitControl      PROTO_XT_ACTIONS_ARGS;
 extern void HandleAllow132         PROTO_XT_ACTIONS_ARGS;
+extern void HandleAllowBoldFonts   PROTO_XT_ACTIONS_ARGS;
 extern void HandleAllowColorOps    PROTO_XT_ACTIONS_ARGS;
 extern void HandleAllowFontOps     PROTO_XT_ACTIONS_ARGS;
 extern void HandleAllowSends       PROTO_XT_ACTIONS_ARGS;
@@ -98,6 +100,7 @@ extern void HandleFontBoxChars     PROTO_XT_ACTIONS_ARGS;
 extern void HandleFontDoublesize   PROTO_XT_ACTIONS_ARGS;
 extern void HandleFontLoading      PROTO_XT_ACTIONS_ARGS;
 extern void HandleFontPacked       PROTO_XT_ACTIONS_ARGS;
+extern void HandleFullscreen       PROTO_XT_ACTIONS_ARGS;
 extern void HandleHardReset        PROTO_XT_ACTIONS_ARGS;
 extern void HandleHpFunctionKeys   PROTO_XT_ACTIONS_ARGS;
 extern void HandleJumpscroll       PROTO_XT_ACTIONS_ARGS;
@@ -109,8 +112,8 @@ extern void HandleNumLock          PROTO_XT_ACTIONS_ARGS;
 extern void HandleOldFunctionKeys  PROTO_XT_ACTIONS_ARGS;
 extern void HandlePopupMenu        PROTO_XT_ACTIONS_ARGS;
 extern void HandlePrintControlMode PROTO_XT_ACTIONS_ARGS;
-extern void HandlePrintScreen      PROTO_XT_ACTIONS_ARGS;
 extern void HandlePrintEverything  PROTO_XT_ACTIONS_ARGS;
+extern void HandlePrintScreen      PROTO_XT_ACTIONS_ARGS;
 extern void HandleQuit             PROTO_XT_ACTIONS_ARGS;
 extern void HandleRedraw           PROTO_XT_ACTIONS_ARGS;
 extern void HandleRenderFont       PROTO_XT_ACTIONS_ARGS;
@@ -135,9 +138,12 @@ extern void HandleTekPage          PROTO_XT_ACTIONS_ARGS;
 extern void HandleTekReset         PROTO_XT_ACTIONS_ARGS;
 extern void HandleTiteInhibit      PROTO_XT_ACTIONS_ARGS;
 extern void HandleToolbar          PROTO_XT_ACTIONS_ARGS;
+extern void HandleUTF8Fonts        PROTO_XT_ACTIONS_ARGS;
 extern void HandleUTF8Mode         PROTO_XT_ACTIONS_ARGS;
 extern void HandleUTF8Title        PROTO_XT_ACTIONS_ARGS;
 extern void HandleVisibility       PROTO_XT_ACTIONS_ARGS;
+extern void HandleWriteError       PROTO_XT_ACTIONS_ARGS;
+extern void HandleWriteNow         PROTO_XT_ACTIONS_ARGS;
 
 extern void SetupMenus (Widget /*shell*/, Widget */*forms*/, Widget */*menus*/, Dimension * /*menu_high*/);
 
@@ -157,12 +163,19 @@ typedef enum {
 #if OPT_TOOLBAR
     mainMenu_toolbar,
 #endif
+#if OPT_MAXIMIZE
+    mainMenu_fullscreen,
+#endif
     mainMenu_securekbd,
     mainMenu_allowsends,
     mainMenu_redraw,
     mainMenu_line1,
 #ifdef ALLOWLOGGING
     mainMenu_logging,
+#endif
+#if OPT_PRINT_ON_EXIT
+    mainMenu_write_now,
+    mainMenu_write_error,
 #endif
     mainMenu_print,
     mainMenu_print_redir,
@@ -263,6 +276,7 @@ typedef enum {
 
 #if OPT_DEC_CHRSET || OPT_BOX_CHARS || OPT_DEC_SOFTFONT
     fontMenu_line1,
+    fontMenu_allowBoldFonts,
 #if OPT_BOX_CHARS
     fontMenu_font_boxchars,
     fontMenu_font_packedfont,
@@ -281,8 +295,9 @@ typedef enum {
     fontMenu_render_font,
 #endif
 #if OPT_WIDE_CHARS
-    fontMenu_wide_chars,
-    fontMenu_wide_title,
+    fontMenu_utf8_mode,
+    fontMenu_utf8_fonts,
+    fontMenu_utf8_title,
 #endif
 #endif
 #if OPT_ALLOW_XXX_OPS
@@ -296,7 +311,6 @@ typedef enum {
 
     fontMenu_LAST
 } fontMenuIndices;
-
 
 /*
  * items in tek4014 mode menu
@@ -335,6 +349,12 @@ extern void update_toolbar(void);
 #define update_toolbar() /* nothing */
 #endif
 
+#if OPT_MAXIMIZE
+extern void update_fullscreen(void);
+#else
+#define update_fullscreen() /* nothing */
+#endif
+
 extern void update_securekbd(void);
 extern void update_allowsends(void);
 
@@ -342,6 +362,12 @@ extern void update_allowsends(void);
 extern void update_logging(void);
 #else
 #define update_logging() /*nothing*/
+#endif
+
+#if OPT_PRINT_ON_EXIT
+extern void update_write_error(void);
+#else
+#define update_write_error() /*nothing*/
 #endif
 
 extern void update_print_redir(void);
@@ -458,9 +484,11 @@ extern void update_font_renderfont(void);
 
 #if OPT_WIDE_CHARS
 extern void update_font_utf8_mode(void);
+extern void update_font_utf8_fonts(void);
 extern void update_font_utf8_title(void);
 #else
 #define update_font_utf8_mode() /* nothing */
+#define update_font_utf8_fonts() /* nothing */
 #define update_font_utf8_title() /* nothing */
 #endif
 
@@ -478,6 +506,12 @@ extern void set_tekhide_sensitivity(void);
 #define set_tekhide_sensitivity() /*nothing*/
 #endif
 
+#if OPT_DEC_CHRSET || OPT_BOX_CHARS || OPT_DEC_SOFTFONT
+extern void update_menu_allowBoldFonts(void);
+#else
+#define update_menu_allowBoldFonts() /*nothing*/
+#endif
+
 /*
  * macros for mapping font size to tekMenu placement
  */
@@ -492,4 +526,6 @@ extern void set_tekfont_menu_item(int n,int val);
 
 extern void set_menu_font(int val);
 
-#endif	/*included_menu_h*/
+/* *INDENT-ON* */
+
+#endif /* included_menu_h */

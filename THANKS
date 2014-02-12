@@ -1,4 +1,4 @@
--- $XTermId: THANKS,v 1.1 2009/10/11 17:30:42 tom Exp $
+-- $XTermId: THANKS,v 1.5 2011/08/21 00:52:56 tom Exp $
 -- vile:txtmode fk=8bit
 There's no AUTHORS file in this distribution; it would be redundant since
 I (Thomas E. Dickey) have done more than 80% of the work on xterm since 1996.
@@ -10,6 +10,7 @@ For some insight, see
 
 Here's a list from xterm.log.html of people who have contributed changes.
 
+Adam M Costello
 Adam Sulmicki
 Alan Coopersmith
 Alex Hornung
@@ -17,6 +18,7 @@ Alexander Pohoyda
 Alexander V Lukyanov
 Andrea Odetti
 Andreas Jaeger
+Andreas Schwab
 Andrew Sumner
 Andrew Tipton
 Anton Kovalenko
@@ -30,12 +32,15 @@ Bram Moolenaar
 Branden Robinson
 Bruno Haible
 Caetano Jimenez Carezzato
+Chris Adams
+Chris Clayton
 Christian Biere
 Christian Weisgerber
 Chuck Blake
 D Roland Walker
 Daniel Colascione
 Daniel Jacobowitz
+Dave Simmons
 David Dawes
 David Krause
 David Madore
@@ -44,7 +49,9 @@ David Mathog
 David Wood
 David Yeo
 Denis Zaitsev
+Dennis Preiser
 Dennis Schneider
+Dimitrios Christidis
 Dr Werner Fink
 Ed Schouten
 Eddy De Greef
@@ -58,6 +65,7 @@ Frank Guangxin Liu
 Frank Liu
 Gael Roualland
 George Peter Staplin
+Gertjan Halkes
 Greg Badros
 Greg Klanderman
 Greg Smith
@@ -72,9 +80,11 @@ Jeff Chua
 Jeff Uphoff
 Jens Schweikhardt
 Jeremy Buhler
+Jeremy Huddleston
 Jeroen Ruigrok
 Jess Thrysoee
 Jim Paris
+Jochen Voss
 Joe Allen
 Joe Peterson
 Johnny Billquist
@@ -86,11 +96,14 @@ Kean Johnston
 Keith Packard
 Ken Martin
 Kevin Buhr
+Kevin Schoedel
 Kiyokazu Suto
 Larry Riedel
 Lee Olsen
+Loïc Minier
 Marc Bevand
 Marc La France
+Marco Peereboom
 Marius Tolzmann
 Mark Waggoner
 Markus Kuhn
@@ -100,6 +113,7 @@ Matthias Scheler
 Matthieu Herrb
 Matthieu Lagouge
 Max Mikhanosha
+Michael Riepe
 Michael Rohleder
 Michael Schroeder
 Mike Castle
@@ -110,6 +124,7 @@ Miroslav Lichvar
 Nam SungHyun
 Nelson Beebe
 Németh Márton
+Nicolas George
 Ovidiu Gheorghioiu
 Paul Gilmartin
 Paul Giordano
@@ -127,6 +142,7 @@ Robert Brady
 Robert Earl
 Robin Cutshaw
 Ross Paterson
+Ryan Johnson
 Scott Sewall
 Semen A Ustimenko
 Sergei Laskavy
@@ -138,6 +154,7 @@ Stuart Lissaman
 Sven Verdoolaege
 Taneli Huuskonen
 Ted Phelps
+Thierry Reding
 Thomas Wolff
 Tim Adye
 Tim Pope

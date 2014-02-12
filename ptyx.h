@@ -1,7 +1,7 @@
-/* $XTermId: ptyx.h,v 1.670 2010/06/15 08:34:38 tom Exp $ */
+/* $XTermId: ptyx.h,v 1.720 2012/01/05 23:58:19 tom Exp $ */
 
 /*
- * Copyright 1999-2009,2010 by Thomas E. Dickey
+ * Copyright 1999-2010,2011 by Thomas E. Dickey
  *
  *                         All Rights Reserved
  *
@@ -60,6 +60,7 @@
 #endif
 
 /* ptyx.h */
+/* *INDENT-OFF* */
 /* @(#)ptyx.h	X10/6.6	11/10/86 */
 
 #include <X11/IntrinsicP.h>
@@ -72,6 +73,8 @@
 #ifdef XRENDERFONT
 #include <X11/Xft/Xft.h>
 #endif
+
+#include <stdio.h>
 
 /* adapted from IntrinsicI.h */
 #define MyStackAlloc(size, stack_cache_array)     \
@@ -90,6 +93,12 @@
 #define TypeMalloc(type)	TypeMallocN(type, 1)
 
 #define TypeRealloc(type,n,p)	(type *)realloc(p, (n) * sizeof(type))
+
+#define TypeXtReallocN(t,p,n)	(t *)(void *)XtRealloc((char *)(p), (Cardinal)(sizeof(t) * (size_t) (n)))
+
+#define TypeXtMallocX(type,n)	(type *)(void *)XtMalloc((Cardinal)(sizeof(type) + (size_t) (n)))
+#define TypeXtMallocN(type,n)	(type *)(void *)XtMalloc((Cardinal)(sizeof(type) * (size_t) (n)))
+#define TypeXtMalloc(type)	TypeXtMallocN(type, 1)
 
 /* use these to allocate partly-structured data */
 #define CastMallocN(type,n)	(type *)malloc(sizeof(type) + (size_t) (n))
@@ -167,21 +176,19 @@
 #undef USE_PTY_SEARCH
 #elif (defined(sun) && defined(SVR4)) || defined(_ALL_SOURCE) || defined(__CYGWIN__)
 #undef USE_PTY_SEARCH
+#elif defined(__OpenBSD__)
+#undef USE_PTY_SEARCH
+#undef USE_PTY_DEVICE
 #endif
 
-#if defined(SYSV) && defined(i386) && !defined(SVR4)
-#define ATT
-#define USE_HANDSHAKE 1
-#define USE_ISPTS_FLAG 1
+#if (defined (__GLIBC__) && ((__GLIBC__ > 2) || (__GLIBC__ == 2) && (__GLIBC_MINOR__ >= 1)))
+#define USE_HANDSHAKE 0	/* "recent" Linux systems do not require handshaking */
 #endif
 
 #if (defined (__GLIBC__) && ((__GLIBC__ > 2) || (__GLIBC__ == 2) && (__GLIBC_MINOR__ >= 1)))
 #define USE_USG_PTYS
-#define USE_HANDSHAKE 0	/* "recent" Linux systems do not require handshaking */
 #elif (defined(ATT) && !defined(__sgi)) || defined(__MVS__) || (defined(SYSV) && defined(i386))
 #define USE_USG_PTYS
-#else
-#define USE_HANDSHAKE 1
 #endif
 
 /*
@@ -597,6 +604,10 @@ typedef struct {
 #define OPT_PC_COLORS   1 /* true if xterm supports PC-style (bold) colors */
 #endif
 
+#ifndef OPT_PRINT_ON_EXIT
+#define OPT_PRINT_ON_EXIT 1 /* true allows xterm to dump screen on X error */
+#endif
+
 #ifndef OPT_PTY_HANDSHAKE
 #define OPT_PTY_HANDSHAKE USE_HANDSHAKE	/* avoid pty races on older systems */
 #endif
@@ -647,6 +658,10 @@ typedef struct {
 
 #ifndef OPT_SELECT_REGEX
 #define OPT_SELECT_REGEX 0 /* true if xterm supports regular-expression selects */
+#endif
+
+#ifndef OPT_SELECTION_OPS
+#define OPT_SELECTION_OPS 1 /* true if xterm supports operations on selection */
 #endif
 
 #ifndef OPT_SESSION_MGT
@@ -883,6 +898,13 @@ typedef enum {
 } FontOps;
 
 typedef enum {
+    esFalse = 0
+    , esTrue
+    , esAlways
+    , esNever
+} FullscreenOps;
+
+typedef enum {
     etSetTcap = 1
     , etGetTcap
     , etLAST
@@ -900,6 +922,7 @@ typedef enum {
     , ewSetWinSizeChars = 8
 #if OPT_MAXIMIZE
     , ewMaximizeWin = 9
+    , ewFullscreenWin = 10
 #endif
     , ewGetWinState = 11
     , ewGetWinPosition = 13
@@ -1374,6 +1397,7 @@ typedef enum {
 	DP_X_MARGIN,
 	DP_X_MORE,
 	DP_X_MOUSE,
+	DP_X_EXT_MOUSE,
 	DP_X_REVWRAP,
 	DP_X_X10MSE,
 #if OPT_BLINK_CURS
@@ -1427,7 +1451,22 @@ typedef struct {
 	int	printer_formfeed;	/* print formfeed per function	*/
 	int	printer_newline;	/* print newline per function	*/
 	int	print_attributes;	/* 0=off, 1=normal, 2=color	*/
+	int	print_everything;	/* 0=all, 1=dft, 2=alt, 3=saved */
 } PrinterFlags;
+
+typedef struct {
+	FILE *	fp;			/* output file/pipe used	*/
+	Boolean isOpen;			/* output was opened/tried	*/
+	Boolean toFile;			/* true when directly to file	*/
+	String	printer_command;	/* pipe/shell command string	*/
+	Boolean printer_autoclose;	/* close printer when offline	*/
+	Boolean printer_extent;		/* print complete page		*/
+	Boolean printer_formfeed;	/* print formfeed per function	*/
+	Boolean printer_newline;	/* print newline per function	*/
+	int	printer_controlmode;	/* 0=off, 1=auto, 2=controller	*/
+	int	print_attributes;	/* 0=off, 1=normal, 2=color	*/
+	int	print_everything;	/* 0=all, 1=dft, 2=alt, 3=saved */
+} PrinterState;
 
 typedef struct {
 	unsigned	which;		/* must have NCOLORS bits */
@@ -1507,6 +1546,29 @@ typedef struct {
 } TKwin;
 
 typedef struct {
+    String f_n;			/* the normal font */
+    String f_b;			/* the bold font */
+#if OPT_WIDE_CHARS
+    String f_w;			/* the normal wide font */
+    String f_wb;		/* the bold wide font */
+#endif
+} VTFontNames;
+
+typedef struct {
+    VTFontNames default_font;
+    String menu_font_names[NMENUFONTS][fMAX];
+} SubResourceRec;
+
+#if OPT_INPUT_METHOD
+#define NINPUTWIDGETS	3
+typedef struct {
+	Widget		w;
+	XIM		xim;		/* input method attached to 'w' */
+	XIC		xic;		/* input context attached to 'xim' */
+} TInput;
+#endif
+
+typedef struct {
 /* These parameters apply to both windows */
 	Display		*display;	/* X display for screen		*/
 	int		respond;	/* socket for responses
@@ -1528,6 +1590,8 @@ typedef struct {
 	Boolean		hilite_reverse;	/* hilite overrides reverse	*/
 #endif
 #if OPT_ISO_COLORS
+	XColor *	cmap_data;	/* color table			*/
+	unsigned	cmap_size;
 	ColorRes	Acolors[MAXCOLORS]; /* ANSI color emulation	*/
 	int		veryBoldColors;	/* modifier for boldColors	*/
 	Boolean		boldColors;	/* can we make bold colors?	*/
@@ -1553,7 +1617,10 @@ typedef struct {
 	Boolean		wide_chars;	/* true when 16-bit chars	*/
 	Boolean		vt100_graphics;	/* true to allow vt100-graphics	*/
 	Boolean		utf8_inparse;	/* true to enable UTF-8 parser	*/
+	char *		utf8_mode_s;	/* use UTF-8 decode/encode	*/
+	char *		utf8_fonts_s;	/* use UTF-8 decode/encode	*/
 	int		utf8_mode;	/* use UTF-8 decode/encode: 0-2	*/
+	int		utf8_fonts;	/* use UTF-8 decode/encode: 0-2	*/
 	int		max_combining;	/* maximum # of combining chars	*/
 	Boolean		utf8_latin1;	/* use UTF-8 with Latin-1 bias	*/
 	Boolean		utf8_title;	/* use UTF-8 titles		*/
@@ -1580,6 +1647,7 @@ typedef struct {
 	long		event_mask;
 	unsigned	send_mouse_pos;	/* user wants mouse transition  */
 					/* and position information	*/
+	int		extend_coords;	/* support large terminals	*/
 	Boolean		send_focus_pos; /* user wants focus in/out info */
 	Boolean		quiet_grab;	/* true if no cursor change on focus */
 #if OPT_PASTE64
@@ -1648,6 +1716,9 @@ typedef struct {
 
 	Boolean		awaitInput;	/* select-timeout mode		*/
 	Boolean		grabbedKbd;	/* keyboard is grabbed		*/
+#if OPT_MAXIMIZE
+	Boolean		fullscreen;	/* window is fullscreen		*/
+#endif
 #ifdef ALLOWLOGGING
 	int		logging;	/* logging mode			*/
 	int		logfd;		/* file descriptor of log	*/
@@ -1670,15 +1741,12 @@ typedef struct {
 	Cursor		hidden_cursor;	/* hidden cursor in window	*/
 
 	String	answer_back;		/* response to ENQ		*/
-	String	printer_command;	/* pipe/shell command string	*/
-	Boolean printer_autoclose;	/* close printer when offline	*/
-	Boolean printer_extent;		/* print complete page		*/
-	Boolean printer_formfeed;	/* print formfeed per function	*/
-	Boolean printer_newline;	/* print newline per function	*/
-	int	printer_controlmode;	/* 0=off, 1=auto, 2=controller	*/
-	int	print_attributes;	/* 0=off, 1=normal, 2=color	*/
 
+	PrinterState	printer_state;	/* actual printer state		*/
 	PrinterFlags	printer_flags;	/* working copy of printer flags */
+#if OPT_PRINT_ON_EXIT
+	Boolean		write_error;
+#endif
 
 	Boolean		fnt_prop;	/* true if proportional fonts	*/
 	Boolean		fnt_boxes;	/* true if font has box-chars	*/
@@ -1690,10 +1758,14 @@ typedef struct {
 #endif
 	Dimension	fnt_wide;
 	Dimension	fnt_high;
+	float		scale_height;	/* scaling for font-height	*/
 	XTermFonts	fnts[fMAX];	/* normal/bold/etc for terminal	*/
 	Boolean		free_bold_box;	/* same_font_size's austerity	*/
+	Boolean		allowBoldFonts;	/* do we use bold fonts at all? */
 #ifndef NO_ACTIVE_ICON
-	XTermFonts	fnt_icon;	/* icon font */
+	XTermFonts	fnt_icon;	/* icon font			*/
+	String		icon_fontname;	/* name of icon font		*/
+	int		icon_fontnum;	/* number to use for icon font	*/
 #endif /* NO_ACTIVE_ICON */
 	int		enbolden;	/* overstrike for bold font	*/
 	XPoint		*box;		/* draw unselected cursor	*/
@@ -1783,6 +1855,9 @@ typedef struct {
 	int		copy_dest_x;
 	int		copy_dest_y;
 
+	Dimension	embed_wide;
+	Dimension	embed_high;
+
 	Boolean		c132;		/* allow change to 132 columns	*/
 	Boolean		curses;		/* kludge line wrap for more	*/
 	Boolean		hp_ll_bc;	/* kludge HP-style ll for xdb	*/
@@ -1857,6 +1932,7 @@ typedef struct {
 	int		bellSuppressTime; /* msecs after Bell before another allowed */
 	Boolean		bellInProgress; /* still ringing/flashing prev bell? */
 	Boolean		bellIsUrgent;	/* set XUrgency WM hint on bell */
+	Boolean		flash_line;	/* show visualBell as current line */
 	/*
 	 * Select/paste state.
 	 */
@@ -1875,6 +1951,7 @@ typedef struct {
 	Boolean		cutNewline;	/* whether or not line cut has \n */
 	Boolean		cutToBeginningOfLine;  /* line cuts to BOL? */
 	Boolean		highlight_selection; /* controls appearance of selection */
+	Boolean		show_wrap_marks; /* show lines which are wrapped */
 	Boolean		trim_selection; /* controls trimming of selection */
 	Boolean		i18nSelections;
 	Boolean		brokenSelections;
@@ -1904,6 +1981,9 @@ typedef struct {
 	int		firstValidRow;	/* Valid rows for selection clipping */
 	int		lastValidRow;	/* " " */
 
+	Boolean		selectToBuffer;	/* copy selection to buffer	*/
+	char *		internal_select;
+
 	String		default_string;
 	String		eightbit_select_types;
 	Atom*		selection_targets_8bit;
@@ -1912,7 +1992,7 @@ typedef struct {
 	Atom*		selection_targets_utf8;
 #endif
 	Atom*		selection_atoms; /* which selections we own */
-	Cardinal	sel_atoms_size;	/*  how many atoms allocated */
+	Cardinal	sel_atoms_size;	 /* how many atoms allocated */
 	Cardinal	selection_count; /* how many atoms in use */
 #if OPT_SELECT_REGEX
 	char *		selectExpr[NSELECTUNITS];
@@ -1920,9 +2000,11 @@ typedef struct {
 	/*
 	 * Input/output state.
 	 */
-	Boolean		input_eight_bits;/* use 8th bit instead of ESC prefix */
-	Boolean		output_eight_bits; /* honor all bits or strip */
-	Boolean		control_eight_bits; /* send CSI as 8-bits */
+	Boolean		input_eight_bits;	/* do not send ESC when meta pressed */
+	int		eight_bit_meta;		/* use 8th bit when meta pressed */
+	char *		eight_bit_meta_s;	/* ...resource eightBitMeta */
+	Boolean		output_eight_bits;	/* honor all bits or strip */
+	Boolean		control_eight_bits;	/* send CSI as 8-bits */
 	Boolean		backarrow_key;		/* backspace/delete */
 	Boolean		alt_is_not_meta;	/* use both Alt- and Meta-key */
 	Boolean		alt_sends_esc;		/* Alt-key sends ESC prefix */
@@ -1936,6 +2018,11 @@ typedef struct {
 #define MenuFontName(n) menu_font_names[n][fNorm]
 	long		menu_font_sizes[NMENUFONTS];
 	int		menu_font_number;
+#if OPT_LOAD_VTFONTS || OPT_WIDE_CHARS
+	Boolean		savedVTFonts;
+	Boolean		mergedVTFonts;
+	SubResourceRec	cacheVTFonts;
+#endif
 #if OPT_CLIP_BOLD
 	Boolean		use_clipping;
 #endif
@@ -1957,20 +2044,14 @@ typedef struct {
 #endif
 	XftDraw *	renderDraw;
 #endif
-#if OPT_INPUT_METHOD
-	XIM		xim;
-	XFontSet	fs;		/* fontset for XIM preedit */
-	int		fs_ascent;	/* ascent of fs */
-#endif
-	XIC		xic;		/* this is used even without XIM */
 #if OPT_DABBREV
 	Boolean		dabbrev_working;	/* nonzero during dabbrev process */
 	unsigned char	dabbrev_erase_char;	/* used for deleting inserted completion */
 #endif
 	char		tcapbuf[TERMCAP_SIZE];
+	char		tcap_area[TERMCAP_SIZE];
 #if OPT_TCAP_FKEYS
 	char **		tcap_fkeys;
-	char		tcap_area[TERMCAP_SIZE];
 #endif
 } TScreen;
 
@@ -2026,6 +2107,11 @@ typedef struct _TekScreen {
 
 #define MULTICLICKTIME 250	/* milliseconds */
 
+typedef struct {
+    const char *name;
+    int code;
+} FlagList;
+
 typedef enum {
     fwNever = 0,
     fwResource,
@@ -2049,11 +2135,20 @@ typedef enum {			/* legal values for screen.pointer_mode */
 } pointerModeTypes;
 
 typedef enum {			/* legal values for screen.utf8_mode */
-    uFalse = 0,
-    uTrue = 1,
-    uAlways = 2,
-    uDefault = 3
+    uFalse = 0
+    , uTrue = 1
+    , uAlways = 2
+    , uDefault = 3
+    , uLast
 } utf8ModeTypes;
+
+typedef enum {			/* legal values for screen.eight_bit_meta */
+    ebFalse = 0
+    , ebTrue = 1
+    , ebNever = 2
+    , ebLocale = 3
+    , ebLast
+} ebMetaModeTypes;
 
 #if OPT_HP_FUNC_KEYS
 #define NAME_HP_KT " hp"
@@ -2123,15 +2218,6 @@ typedef struct
 #endif
 } TKeyboard;
 
-typedef struct {
-    char *f_n;			/* the normal font */
-    char *f_b;			/* the bold font */
-#if OPT_WIDE_CHARS
-    char *f_w;			/* the normal wide font */
-    char *f_wb;			/* the bold wide font */
-#endif
-} VTFontNames;
-
 #define GravityIsNorthWest(w) ((w)->misc.resizeGravity == NorthWestGravity)
 #define GravityIsSouthWest(w) ((w)->misc.resizeGravity == SouthWestGravity)
 
@@ -2185,6 +2271,9 @@ typedef struct _Misc {
     Boolean open_im;		/* true if input-method is opened */
     Boolean cannot_im;		/* true if we cannot use input-method */
     int retry_im;
+    XFontSet xim_fs;		/* fontset for XIM preedit */
+    int xim_fs_ascent;		/* ascent of fs */
+    TInput inputs[NINPUTWIDGETS];
 #endif
     Boolean dynamicColors;
     Boolean shared_ic;
@@ -2270,6 +2359,8 @@ typedef struct _XtermWidgetRec {
     int		cur_background; /* current background color	*/
     Pixel	dft_foreground; /* default foreground color	*/
     Pixel	dft_background; /* default background color	*/
+    Pixel	old_foreground; /* original foreground color	*/
+    Pixel	old_background; /* original background color	*/
 #if OPT_ISO_COLORS
     int		sgr_foreground; /* current SGR foreground color */
     int		sgr_background; /* current SGR background color */
@@ -2355,10 +2446,17 @@ typedef struct _TekWidgetRec {
 /* The toplevel-call to drawXtermText() should have text-attributes guarded: */
 #define DRAWX_MASK	(ATTRIBUTES | CHARDRAWN)
 
+/*
+ * BOLDATTR is not only nonzero when we will use bold font, but uses the bits
+ * for BOLD/BLINK to match against the video attributes which were originally
+ * requested.
+ */
+#define USE_BOLD(screen) ((screen)->allowBoldFonts)
+
 #if OPT_BLINK_TEXT
-#define BOLDATTR(screen) (BOLD | ((screen)->blink_as_bold ? BLINK : 0))
+#define BOLDATTR(screen) (unsigned) (USE_BOLD(screen) ? (BOLD | ((screen)->blink_as_bold ? BLINK : 0)) : 0)
 #else
-#define BOLDATTR(screen) (BOLD | BLINK)
+#define BOLDATTR(screen) (unsigned) (USE_BOLD(screen) ? (BOLD | BLINK) : 0)
 #endif
 
 /*
@@ -2393,6 +2491,8 @@ typedef struct _TekWidgetRec {
 
 #define TScreenOf(xw)	(&(xw)->screen)
 #define TekScreenOf(tw) (&(tw)->screen)
+
+#define PrinterOf(screen) (screen)->printer_state
 
 #ifdef SCROLLBAR_RIGHT
 #define OriginX(screen) (((term->misc.useRight)?0:ScrollbarWidth(screen)) + screen->border)
@@ -2450,7 +2550,7 @@ typedef struct _TekWidgetRec {
  * These definitions do not depend on whether xterm supports active-icon.
  */
 #define VWindow(screen)		WhichVWin(screen)->window
-#define VShellWindow		XtWindow(SHELL_OF(term))
+#define VShellWindow(xw)	XtWindow(SHELL_OF(xw))
 #define TWindow(screen)		WhichTWin(screen)->window
 #define TShellWindow		XtWindow(SHELL_OF(tekWidget))
 
@@ -2503,8 +2603,8 @@ typedef struct _TekWidgetRec {
 
 #if OPT_TOOLBAR
 #define ToolbarHeight(w)	((resource.toolBar) \
-				 ? (term->VT100_TB_INFO(menu_height) \
-				  + term->VT100_TB_INFO(menu_border) * 2) \
+				 ? ((w)->VT100_TB_INFO(menu_height) \
+				  + (w)->VT100_TB_INFO(menu_border) * 2) \
 				 : 0)
 #else
 #define ToolbarHeight(w) 0
@@ -2586,6 +2686,10 @@ typedef struct Tek_Link
 #define TRACE_TRANS(name,w) /*nothing*/
 #endif
 
+#ifndef TRACE_WIN_ATTRS
+#define TRACE_WIN_ATTRS(w) /*nothing*/
+#endif
+
 #ifndef TRACE_WM_HINTS
 #define TRACE_WM_HINTS(w) /*nothing*/
 #endif
@@ -2597,5 +2701,7 @@ typedef struct Tek_Link
 #ifndef TRACE2
 #define TRACE2(p) /*nothing*/
 #endif
+
+/* *INDENT-ON* */
 
 #endif /* included_ptyx_h */

@@ -1,36 +1,34 @@
-/* $XTermId: ptydata.c,v 1.98 2010/06/20 21:41:15 tom Exp $ */
+/* $XTermId: ptydata.c,v 1.101 2011/09/11 14:59:38 tom Exp $ */
 
-/************************************************************
-
-Copyright 1999-2009,2010 by Thomas E. Dickey
-
-                        All Rights Reserved
-
-Permission is hereby granted, free of charge, to any person obtaining a
-copy of this software and associated documentation files (the
-"Software"), to deal in the Software without restriction, including
-without limitation the rights to use, copy, modify, merge, publish,
-distribute, sublicense, and/or sell copies of the Software, and to
-permit persons to whom the Software is furnished to do so, subject to
-the following conditions:
-
-The above copyright notice and this permission notice shall be included
-in all copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
-OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
-MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
-IN NO EVENT SHALL THE ABOVE LISTED COPYRIGHT HOLDER(S) BE LIABLE FOR ANY
-CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
-TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
-SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-
-Except as contained in this notice, the name(s) of the above copyright
-holders shall not be used in advertising or otherwise to promote the
-sale, use or other dealings in this Software without prior written
-authorization.
-
-********************************************************/
+/*
+ * Copyright 1999-2010,2011 by Thomas E. Dickey
+ *
+ *                         All Rights Reserved
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a
+ * copy of this software and associated documentation files (the
+ * "Software"), to deal in the Software without restriction, including
+ * without limitation the rights to use, copy, modify, merge, publish,
+ * distribute, sublicense, and/or sell copies of the Software, and to
+ * permit persons to whom the Software is furnished to do so, subject to
+ * the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included
+ * in all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
+ * OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+ * MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+ * IN NO EVENT SHALL THE ABOVE LISTED COPYRIGHT HOLDER(S) BE LIABLE FOR ANY
+ * CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
+ * TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
+ * SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+ *
+ * Except as contained in this notice, the name(s) of the above copyright
+ * holders shall not be used in advertising or otherwise to promote the
+ * sale, use or other dealings in this Software without prior written
+ * authorization.
+ */
 
 #include <data.h>
 
@@ -75,7 +73,7 @@ decodeUtf8(PtyData * data)
 	    /* We received an ASCII character */
 	    if (utf_count > 0) {
 		data->utf_data = UCS_REPL;	/* prev. sequence incomplete */
-		data->utf_size = (i + 1);
+		data->utf_size = i;
 	    } else {
 		data->utf_data = (IChar) c;
 		data->utf_size = 1;
@@ -138,8 +136,9 @@ decodeUtf8(PtyData * data)
 	    if (c < 0xe0) {
 		utf_count = 1;
 		utf_char = (c & 0x1f);
-		if (!(c & 0x1e))
+		if (!(c & 0x1e)) {
 		    utf_char = UCS_REPL;	/* overlong sequence */
+		}
 	    } else if (c < 0xf0) {
 		utf_count = 2;
 		utf_char = (c & 0x0f);
@@ -323,8 +322,7 @@ initPtyData(PtyData ** result)
     TRACE(("initPtyData using minBufSize %d, maxBufSize %d\n",
 	   FRG_SIZE, BUF_SIZE));
 
-    data = (PtyData *) XtMalloc((Cardinal) (sizeof(*data)
-					    + (unsigned) (BUF_SIZE + FRG_SIZE)));
+    data = TypeXtMallocX(PtyData, (BUF_SIZE + FRG_SIZE));
 
     memset(data, 0, sizeof(*data));
     data->next = data->buffer;

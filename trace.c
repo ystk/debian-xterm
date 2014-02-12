@@ -1,11 +1,10 @@
-/* $XTermId: trace.c,v 1.115 2010/06/15 22:40:28 tom Exp $ */
+/* $XTermId: trace.c,v 1.133 2011/12/27 10:10:53 tom Exp $ */
 
 /*
- * 
- * Copyright 1997-2009,2010 by Thomas E. Dickey
- * 
+ * Copyright 1997-2010,2011 by Thomas E. Dickey
+ *
  *                         All Rights Reserved
- * 
+ *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the
  * "Software"), to deal in the Software without restriction, including
@@ -29,7 +28,6 @@
  * holders shall not be used in advertising or otherwise to promote the
  * sale, use or other dealings in this Software without prior written
  * authorization.
- * 
  */
 
 /*
@@ -37,6 +35,9 @@
  */
 
 #include <xterm.h>		/* for definition of GCC_UNUSED */
+
+#if OPT_TRACE
+
 #include <data.h>
 #include <trace.h>
 
@@ -105,9 +106,11 @@ Trace(const char *fmt,...)
 	    fprintf(trace_fp, "%s\n", xtermVersion());
 	    TraceIds(NULL, 0);
 	}
+	if (!trace_fp) {
+	    xtermWarning("Cannot open \"%s\"\n", name);
+	    exit(EXIT_FAILURE);
+	}
     }
-    if (!trace_fp)
-	abort();
 
     va_start(ap, fmt);
     vfprintf(trace_fp, fmt, ap);
@@ -144,6 +147,17 @@ TraceIds(const char *fname, int lnum)
 	time_t now = time((time_t *) 0);
 	Trace("-- %s", ctime(&now));
     }
+}
+
+void
+TraceTime(const char *fname, int lnum)
+{
+    time_t now;
+    if (fname != 0) {
+	Trace("datetime (%s@%d) ", fname, lnum);
+    }
+    now = time((time_t *) 0);
+    Trace("-- %s", ctime(&now));
 }
 
 static void
@@ -300,7 +314,7 @@ visibleIChar(IChar * buf, unsigned len)
     return result;
 }
 
-#define CASETYPE(name) case name: result = #name; break;
+#define CASETYPE(name) case name: result = #name; break
 
 const char *
 visibleKeyboardType(xtermKeyboardType type)
@@ -511,6 +525,7 @@ TraceFocus(Widget w, XEvent * ev)
 	    TRACE(("\tdetail:    %s\n", visibleNotifyDetail(event->detail)));
 	    TRACE(("\tmode:      %d\n", event->mode));
 	    TRACE(("\twindow:    %#lx\n", event->window));
+	    TRACE(("\tfocus:     %d\n", event->focus));
 	    TRACE(("\troot:      %#lx\n", event->root));
 	    TRACE(("\tsubwindow: %#lx\n", event->subwindow));
 	}
@@ -552,6 +567,83 @@ TraceSizeHints(XSizeHints * hints)
 	TRACE(("   gravity    %d\n", hints->win_gravity));
 }
 
+static void
+TraceEventMask(const char *tag, long mask)
+{
+#define DATA(name) { name##Mask, #name }
+    /* *INDENT-OFF* */
+    static struct {
+	long mask;
+	const char *name;
+    } table[] = {
+	DATA(KeyPress),
+	DATA(KeyRelease),
+	DATA(ButtonPress),
+	DATA(ButtonRelease),
+	DATA(EnterWindow),
+	DATA(LeaveWindow),
+	DATA(PointerMotion),
+	DATA(PointerMotionHint),
+	DATA(Button1Motion),
+	DATA(Button2Motion),
+	DATA(Button3Motion),
+	DATA(Button4Motion),
+	DATA(Button5Motion),
+	DATA(ButtonMotion),
+	DATA(KeymapState),
+	DATA(Exposure),
+	DATA(VisibilityChange),
+	DATA(StructureNotify),
+	DATA(ResizeRedirect),
+	DATA(SubstructureNotify),
+	DATA(SubstructureRedirect),
+	DATA(FocusChange),
+	DATA(PropertyChange),
+	DATA(ColormapChange),
+	DATA(OwnerGrabButton),
+    };
+#undef DATA
+    Cardinal n;
+    /* *INDENT-ON* */
+
+    for (n = 0; n < XtNumber(table); ++n) {
+	if (table[n].mask & mask) {
+	    TRACE(("%s %s\n", tag, table[n].name));
+	}
+    }
+}
+
+void
+TraceWindowAttributes(XWindowAttributes * attrs)
+{
+    TRACE(("window attributes:\n"));
+    TRACE(("   position     %d,%d\n", attrs->y, attrs->x));
+    TRACE(("   size         %dx%d\n", attrs->height, attrs->width));
+    TRACE(("   border       %d\n", attrs->border_width));
+    TRACE(("   depth        %d\n", attrs->depth));
+    TRACE(("   bit_gravity  %d\n", attrs->bit_gravity));
+    TRACE(("   win_gravity  %d\n", attrs->win_gravity));
+    TRACE(("   root         %#lx\n", (long) attrs->root));
+    TRACE(("   class        %s\n", ((attrs->class == InputOutput)
+				    ? "InputOutput"
+				    : ((attrs->class == InputOnly)
+				       ? "InputOnly"
+				       : "unknown"))));
+    TRACE(("   map_state    %s\n", ((attrs->map_state == IsUnmapped)
+				    ? "IsUnmapped"
+				    : ((attrs->map_state == IsUnviewable)
+				       ? "IsUnviewable"
+				       : ((attrs->map_state == IsViewable)
+					  ? "IsViewable"
+					  : "unknown")))));
+    TRACE(("   all_events\n"));
+    TraceEventMask("        ", attrs->all_event_masks);
+    TRACE(("   your_events\n"));
+    TraceEventMask("        ", attrs->your_event_mask);
+    TRACE(("   no_propagate\n"));
+    TraceEventMask("        ", attrs->do_not_propagate_mask);
+}
+
 void
 TraceWMSizeHints(XtermWidget xw)
 {
@@ -566,6 +658,7 @@ TraceWMSizeHints(XtermWidget xw)
  * Some calls to XGetAtom() will fail, and we don't want to stop.  So we use
  * our own error-handler.
  */
+/* ARGSUSED */
 static int
 no_error(Display * dpy GCC_UNUSED, XErrorEvent * event GCC_UNUSED)
 {
@@ -599,17 +692,20 @@ TraceTranslations(const char *name, Widget w)
     XSetErrorHandler(save);
 }
 
-int
+XtGeometryResult
 TraceResizeRequest(const char *fn, int ln, Widget w,
-		   Dimension reqwide,
-		   Dimension reqhigh,
+		   unsigned reqwide,
+		   unsigned reqhigh,
 		   Dimension * gotwide,
 		   Dimension * gothigh)
 {
-    int rc;
+    XtGeometryResult rc;
 
-    TRACE(("%s@%d ResizeRequest %dx%d\n", fn, ln, reqhigh, reqwide));
-    rc = XtMakeResizeRequest((Widget) w, reqwide, reqhigh, gotwide, gothigh);
+    TRACE(("%s@%d ResizeRequest %ux%u\n", fn, ln, reqhigh, reqwide));
+    rc = XtMakeResizeRequest((Widget) w,
+			     (Dimension) reqwide,
+			     (Dimension) reqhigh,
+			     gotwide, gothigh);
     TRACE(("... ResizeRequest -> "));
     if (gothigh && gotwide)
 	TRACE(("%dx%d ", *gothigh, *gotwide));
@@ -627,16 +723,28 @@ TraceXtermResources(void)
     XTERM_RESOURCE *resp = &resource;
 
     Trace("XTERM_RESOURCE settings:\n");
-    XRES_S(xterm_name);
     XRES_S(icon_geometry);
     XRES_S(title);
     XRES_S(icon_name);
     XRES_S(term_name);
     XRES_S(tty_modes);
+    XRES_I(minBufSize);
+    XRES_I(maxBufSize);
     XRES_B(hold_screen);
     XRES_B(utmpInhibit);
     XRES_B(utmpDisplayId);
     XRES_B(messages);
+    XRES_S(menuLocale);
+    XRES_S(omitTranslation);
+    XRES_S(keyboardType);
+#if OPT_PRINT_ON_EXIT
+    XRES_I(printModeNow);
+    XRES_I(printModeOnXError);
+    XRES_I(printOptsNow);
+    XRES_I(printOptsOnXError);
+    XRES_S(printFileNow);
+    XRES_S(printFileOnXError);
+#endif
 #if OPT_SUNPC_KBD
     XRES_B(sunKeyboard);
 #endif
@@ -668,6 +776,13 @@ TraceXtermResources(void)
 #if OPT_SESSION_MGT
     XRES_B(sessionMgt);
 #endif
+#if OPT_TOOLBAR
+    XRES_B(toolBar);
+#endif
+#if OPT_MAXIMIZE
+    XRES_B(maximized);
+    XRES_S(fullscreen_s);
+#endif
 }
 
 void
@@ -686,7 +801,7 @@ parse_option(char *dst, String src, int first)
 {
     char *s;
 
-    if (!strncmp(src, "-/+", 3)) {
+    if (!strncmp(src, "-/+", (size_t) 3)) {
 	dst[0] = (char) first;
 	strcpy(dst + 1, src + 3);
     } else {
@@ -833,3 +948,10 @@ TraceOptions(OptionHelp * options, XrmOptionDescRec * resources, Cardinal res_co
 	}
     }
 }
+#else
+extern void empty_trace(void);
+void
+empty_trace(void)
+{
+}
+#endif

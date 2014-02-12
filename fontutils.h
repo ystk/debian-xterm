@@ -1,41 +1,40 @@
-/* $XTermId: fontutils.h,v 1.81 2010/06/15 10:58:13 tom Exp $ */
+/* $XTermId: fontutils.h,v 1.84 2011/09/11 14:59:37 tom Exp $ */
 
-/************************************************************
-
-Copyright 1998-2009,2010 by Thomas E. Dickey
-
-                        All Rights Reserved
-
-Permission is hereby granted, free of charge, to any person obtaining a
-copy of this software and associated documentation files (the
-"Software"), to deal in the Software without restriction, including
-without limitation the rights to use, copy, modify, merge, publish,
-distribute, sublicense, and/or sell copies of the Software, and to
-permit persons to whom the Software is furnished to do so, subject to
-the following conditions:
-
-The above copyright notice and this permission notice shall be included
-in all copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
-OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
-MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. 
-IN NO EVENT SHALL THE ABOVE LISTED COPYRIGHT HOLDER(S) BE LIABLE FOR ANY
-CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
-TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
-SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-
-Except as contained in this notice, the name(s) of the above copyright
-holders shall not be used in advertising or otherwise to promote the
-sale, use or other dealings in this Software without prior written
-authorization.
-
-********************************************************/
+/*
+ * Copyright 1998-2010,2011 by Thomas E. Dickey
+ *
+ *                         All Rights Reserved
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a
+ * copy of this software and associated documentation files (the
+ * "Software"), to deal in the Software without restriction, including
+ * without limitation the rights to use, copy, modify, merge, publish,
+ * distribute, sublicense, and/or sell copies of the Software, and to
+ * permit persons to whom the Software is furnished to do so, subject to
+ * the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included
+ * in all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
+ * OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+ * MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+ * IN NO EVENT SHALL THE ABOVE LISTED COPYRIGHT HOLDER(S) BE LIABLE FOR ANY
+ * CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
+ * TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
+ * SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+ *
+ * Except as contained in this notice, the name(s) of the above copyright
+ * holders shall not be used in advertising or otherwise to promote the
+ * sale, use or other dealings in this Software without prior written
+ * authorization.
+ */
 
 #ifndef included_fontutils_h
 #define included_fontutils_h 1
 
 #include <xterm.h>
+/* *INDENT-OFF* */
 
 extern Bool xtermLoadDefaultFonts (XtermWidget /* xw */);
 extern Bool xtermOpenFont (XtermWidget /* xw */, const char */* name */, XTermFonts * /* result */, fontWarningTypes /* warn */, Bool /* force */);
@@ -95,6 +94,7 @@ extern void HandleLoadVTFonts PROTO_XT_ACTIONS_ARGS;
 
 #if OPT_LOAD_VTFONTS || OPT_WIDE_CHARS
 extern Bool xtermLoadWideFonts (XtermWidget /* w */, Bool /* nullOk */);
+extern void xtermSaveVTFonts(XtermWidget /* xw */);
 #endif
 
 #define xtermIsDecGraphic(ch)	((ch) > 0 && (ch) < 32)
@@ -105,7 +105,7 @@ extern void xtermCloseXft(TScreen * /* screen */, XTermXftFonts * /* pub */);
 #endif
 
 #if OPT_SHIFT_FONTS
-extern char *getFaceName(XtermWidget /* xw */, Bool /* wideName */);
+extern String getFaceName(XtermWidget /* xw */, Bool /* wideName */);
 extern void HandleLargerFont PROTO_XT_ACTIONS_ARGS;
 extern void HandleSmallerFont PROTO_XT_ACTIONS_ARGS;
 extern void setFaceName(XtermWidget /* xw */, const char * /*value */);
@@ -115,5 +115,7 @@ extern void setFaceName(XtermWidget /* xw */, const char * /*value */);
 extern unsigned ucs2dec (unsigned);
 extern unsigned dec2ucs (unsigned);
 #endif
+
+/* *INDENT-ON* */
 
 #endif /* included_fontutils_h */

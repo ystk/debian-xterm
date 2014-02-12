@@ -1,7 +1,7 @@
-/* $XTermId: xtermcap.c,v 1.44 2010/06/13 17:46:27 tom Exp $ */
+/* $XTermId: xtermcap.c,v 1.47 2011/07/11 00:31:26 tom Exp $ */
 
 /*
- * Copyright 2007-2009,2010 by Thomas E. Dickey
+ * Copyright 2007-2010,2011 by Thomas E. Dickey
  *
  *                         All Rights Reserved
  *
@@ -68,7 +68,7 @@ typedef struct {
 } TCAPINFO;
 /* *INDENT-OFF* */
 #define DATA(tc,ti,x,y) { tc, ti, x, y }
-static TCAPINFO table[] = {
+static const TCAPINFO table[] = {
 	/*	tcap	terminfo	code		state */
 	DATA(	"%1",	"khlp",		XK_Help,	0	),
 	DATA(	"#1",	"kHLP",		XK_Help,	SHIFT	),
@@ -89,8 +89,8 @@ static TCAPINFO table[] = {
 
 	DATA(	"#4",	"kLFT",		XK_Left,	SHIFT	),
 	DATA(	"%i",	"kRIT",		XK_Right,	SHIFT	),
-	DATA(	"kF",	"kind",		XK_Up,		SHIFT	),
-	DATA(	"kR",	"kri",		XK_Down,	SHIFT	),
+	DATA(	"kF",	"kind",		XK_Down,	SHIFT	),
+	DATA(	"kR",	"kri",		XK_Up,		SHIFT	),
 
 	DATA(	"k1",	"kf1",		XK_Fn(1),	0	),
 	DATA(	"k2",	"kf2",		XK_Fn(2),	0	),
@@ -345,7 +345,7 @@ lookupTcapByName(const char *name)
 int
 xtermcapKeycode(XtermWidget xw, const char **params, unsigned *state, Bool * fkey)
 {
-    TCAPINFO *data;
+    const TCAPINFO *data;
     int which;
     int code = -1;
     char *name;
@@ -613,6 +613,7 @@ set_termcap(XtermWidget xw, const char *name)
 void
 free_termcap(XtermWidget xw)
 {
+#if OPT_TCAP_FKEYS
     TScreen *screen = TScreenOf(xw);
 
     if (screen->tcap_fkeys != 0) {
@@ -629,4 +630,5 @@ free_termcap(XtermWidget xw)
 	free(screen->tcap_fkeys);
 	screen->tcap_fkeys = 0;
     }
+#endif
 }

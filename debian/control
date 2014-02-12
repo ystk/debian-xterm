@@ -2,8 +2,8 @@ Source: xterm
 Section: x11
 Priority: optional
 Maintainer: Debian X Strike Force <debian-x@lists.debian.org>
-Uploaders: David Nusinow <dnusinow@debian.org>
-Standards-Version: 3.8.4
+Uploaders: Cyril Brulebois <kibi@debian.org>
+Standards-Version: 3.9.2
 Vcs-Browser: http://git.debian.org/?p=pkg-xorg/app/xterm.git
 Vcs-Git: git://git.debian.org/git/pkg-xorg/app/xterm
 Homepage: http://invisible-island.net/xterm/xterm.html
@@ -15,8 +15,9 @@ Build-Depends:
  libutempter-dev,
  debhelper (>= 5),
  quilt,
- lynx,
+ lynx-cur | lynx,
  xorg-docs-core,
+ desktop-file-utils,
 
 # Reasons for Build-Depends:
 #
@@ -98,19 +99,18 @@ Build-Depends:
 #   xorg-docs-core                  provides X(7) which minstall.sh tries to
 #                                   detect
 #   debhelper (>= 5)                debian/compat = 5
-#   dpkg-dev (>= 1.10.14)           (1.10.11) comment support in debian/control;
-#                                   (1.10.14) architecture-specific binary
-#                                   package dependencies
 #   quilt                           patch management system
-#   lynx                            generates plain-text version of Debian X FAQ
+#   lynx-cur | lynx                 generates plain-text version of xterm faq
+#   desktop-file-utils              for installing xterm.desktop
 
 Package: xterm
 Architecture: any
+Multi-Arch: foreign
 Depends:
  xbitmaps,
  ${shlibs:Depends},
  ${misc:Depends},
-Recommends: x11-utils | xutils
+Recommends: x11-utils
 Suggests: xfonts-cyrillic
 Provides: x-terminal-emulator
 Description: X terminal emulator

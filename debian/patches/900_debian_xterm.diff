@@ -25,78 +25,49 @@ Index: xterm/termcap
 ===================================================================
 --- xterm.orig/termcap
 +++ xterm/termcap
-@@ -71,6 +71,14 @@
- 	:so=\E[7m:sr=\EM:st=\EH:te=\E[?1049l:ti=\E[?1049h:\
- 	:ue=\E[24m:up=\E[A:us=\E[4m:ve=\E[?12l\E[?25h:vi=\E[?25l:vs=\E[?12;25h:
+@@ -239,5 +239,7 @@ v0|xterm|X11 terminal emulator:\
  
-+# xterm-debian is identical to xterm-new except that it more strictly
-+# conforms to DEC VT220 behavior in the case of the backspace key; this is
-+# mandated by Section 9.8 of the Debian Policy Manual.  Also see
-+# <http://vt100.net/docs/vt220-rm/>.
-+xd|xterm-debian|Debian xterm (VT220-conformant backspace):\
-+	:kb=^?:\
-+	:tc=xterm-new:
-+
- # The xterm-new description has all of the features, but is not completely
- # compatible with vt220.  If you are using a Sun or PC keyboard, set the
- # sunKeyboard resource to true:
-@@ -233,5 +241,6 @@
- # is widely used for a variety of incompatible terminal emulations including
- # color_xterm and rxvt.
- v0|xterm|X11 terminal emulator:\
--	:tc=xterm-new:
-+	:tc=xterm-debian:
-+#	:tc=xterm-new:
- #	:tc=xterm-r6:
+ # This fragment is for people who cannot agree on what the backspace key
+ # should send.
++# Modified to more strictly conform to the DEC VT220 behavior; this is
++# mandated by Section 9.8 of the Debian Policy Manual.
+ xterm+kbs|fragment for backspace key:\
+-	:kb=^H:
++	:kb=^?:
 Index: xterm/terminfo
 ===================================================================
 --- xterm.orig/terminfo
 +++ xterm/terminfo
-@@ -955,6 +955,13 @@
- 	u8=\E[?1;2c,
- 	u9=\E[c,
- 	vpa=\E[%i%p1%dd,
-+# xterm-debian is identical to xterm-new except that it more strictly
-+# conforms to DEC VT220 behavior in the case of the backspace key; this is
-+# mandated by the Section 9.8 of the Debian Policy Manual.  Also see
-+# <http://vt100.net/docs/vt220-rm/>.
-+xterm-debian|Debian xterm (VT220-conformant backspace),
-+	kbs=\177,
-+	use=xterm-new,
+@@ -139,6 +139,8 @@ xterm-new|modern xterm terminal emulator
+ 	use=xterm+pcfkeys,
+ 	use=xterm+tmux,
+ 	use=xterm-basic,
++	rmm@,
++	smm@,
  #
- # The xterm-new description has all of the features, but is not completely
- # compatible with vt220.  If you are using a Sun or PC keyboard, set the
-@@ -1393,7 +1400,7 @@
- 	setaf=\E[%?%p1%{8}%<%t%p1%{30}%+%e%p1%{82}%+%;%dm,
- 	setb=%p1%{8}%/%{6}%*%{4}%+\E[%d%p1%{8}%m%Pa%?%ga%{1}%=%t4%e%ga%{3}%=%t6%e%ga%{4}%=%t1%e%ga%{6}%=%t3%e%ga%d%;m,
- 	setf=%p1%{8}%/%{6}%*%{3}%+\E[%d%p1%{8}%m%Pa%?%ga%{1}%=%t4%e%ga%{3}%=%t6%e%ga%{4}%=%t1%e%ga%{6}%=%t3%e%ga%d%;m,
--	use=xterm-new,
-+	use=xterm-debian,
- #
- # This uses RGB values 0..1000
- #
-@@ -1408,7 +1415,7 @@
- 	setaf=\E[%?%p1%{8}%<%t3%p1%d%e%p1%{16}%<%t9%p1%{8}%-%d%e38;5;%p1%d%;m,
- 	setb@,
- 	setf@,
--	use=xterm-new,
-+	use=xterm-debian,
- xterm-88color|xterm with 88 colors,
- 	colors#88,
- 	pairs#7744,
-@@ -1935,5 +1942,6 @@
+ # Encode modifiers using parameters (see "Xterm Control Sequences" ctlseqs.ms).
+ # Note that this is unrelated to PCTERM.
+@@ -1963,11 +1965,13 @@ xterm-r5|xterm R5 version,
+ # This is the only entry which you should have to customize, since "xterm"
  # is widely used for a variety of incompatible terminal emulations including
  # color_xterm and rxvt.
- xterm|X11 terminal emulator,
--	use=xterm-new,
-+	use=xterm-debian,
-+#	use=xterm-new,
+-xterm|X11 terminal emulator,
++xterm|xterm-debian|X11 terminal emulator,
+ 	use=xterm-new,
  #	use=xterm-r6,
+ 
+ # This fragment is for people who cannot agree on what the backspace key
+ # should send.
++# Modified to more strictly conform to the DEC VT220 behavior; this is
++# mandated by Section 9.8 of the Debian Policy Manual.
+ xterm+kbs|fragment for backspace key,
+-	kbs=^H,
++	kbs=\177,
 Index: xterm/XTerm.ad
 ===================================================================
 --- xterm.orig/XTerm.ad
 +++ xterm/XTerm.ad
-@@ -154,6 +154,10 @@
+@@ -159,6 +159,10 @@
  *tek4014*font3: 6x13
  *tek4014*fontSmall: 6x10
  

@@ -1,7 +1,7 @@
-/* $XTermId: main.h,v 1.54 2010/06/20 20:22:32 tom Exp $ */
+/* $XTermId: main.h,v 1.57 2011/12/14 22:43:02 tom Exp $ */
 
 /*
- * Copyright 2000-2009,2010 by Thomas E. Dickey
+ * Copyright 2000-2010,2011 by Thomas E. Dickey
  *
  *                         All Rights Reserved
  *
@@ -95,10 +95,6 @@
 #define DEFFACESIZE		"14.0"
 #endif
 
-#ifndef DEFFACESIZE
-#define DEFFACESIZE_AUTO	"8.0"
-#endif
-
 #ifndef DEF_ALLOW_COLOR
 #define DEF_ALLOW_COLOR		True
 #endif
@@ -147,6 +143,10 @@
 
 #ifndef DEF_BACKARO_ERASE
 #define DEF_BACKARO_ERASE	False
+#endif
+
+#ifndef DEF_8BIT_META
+#define DEF_8BIT_META		"true"	/* eightBitMeta */
 #endif
 
 #ifndef DEF_COLOR4
@@ -210,4 +210,4 @@
  */
 #define MAXRESOURCES            400
 
-#endif	/* included_main_h */
+#endif /* included_main_h */

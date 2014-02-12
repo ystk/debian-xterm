@@ -1,11 +1,10 @@
-/* $XTermId: trace.h,v 1.54 2010/06/15 22:40:51 tom Exp $ */
+/* $XTermId: trace.h,v 1.64 2011/09/11 14:56:42 tom Exp $ */
 
 /*
- * 
- * Copyright 1997-2009,2010 by Thomas E. Dickey
- * 
+ * Copyright 1997-2010,2011 by Thomas E. Dickey
+ *
  *                         All Rights Reserved
- * 
+ *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the
  * "Software"), to deal in the Software without restriction, including
@@ -29,7 +28,6 @@
  * holders shall not be used in advertising or otherwise to promote the
  * sale, use or other dealings in this Software without prior written
  * authorization.
- * 
  */
 
 /*
@@ -37,16 +35,14 @@
  */
 #ifndef	included_trace_h
 #define	included_trace_h
+/* *INDENT-OFF* */
 
 #include <xterm.h>
 
 #if OPT_TRACE
 
-extern	void	Trace ( const char *, ... )
-#ifdef GCC_PRINTF
-	__attribute__ ((format(printf,1,2)))
-#endif
-	;
+extern	void	Trace ( const char *, ... ) GCC_PRINTFLIKE(1,2);
+
 #undef  TRACE
 #define TRACE(p) Trace p
 
@@ -88,6 +84,10 @@ extern	void	TraceIds(const char * /* fname */, int  /* lnum */);
 #undef  TRACE_IDS
 #define	TRACE_IDS TraceIds(__FILE__, __LINE__)
 
+extern	void	TraceTime(const char * /* fname */, int  /* lnum */);
+#undef  TRACE_TIME
+#define	TRACE_TIME TraceTime(__FILE__, __LINE__)
+
 extern	void	TraceOptions(OptionHelp * /* options */, XrmOptionDescRec * /* resources */, Cardinal  /* count */);
 #undef  TRACE_OPTS
 #define	TRACE_OPTS(opts,ress,lens) TraceOptions(opts,ress,lens)
@@ -95,6 +95,10 @@ extern	void	TraceOptions(OptionHelp * /* options */, XrmOptionDescRec * /* resou
 extern	void	TraceTranslations(const char *, Widget);
 #undef  TRACE_TRANS
 #define	TRACE_TRANS(name,w) TraceTranslations(name,w)
+
+extern	void	TraceWindowAttributes(XWindowAttributes *);
+#undef  TRACE_WIN_ATTRS
+#define	TRACE_WIN_ATTRS(a) TraceWindowAttributes(a)
 
 extern	void	TraceWMSizeHints(XtermWidget);
 #undef  TRACE_WM_HINTS
@@ -104,11 +108,11 @@ extern	void	TraceXtermResources(void);
 #undef  TRACE_XRES
 #define	TRACE_XRES() TraceXtermResources()
 
-extern	int	TraceResizeRequest(const char * /* fn */, int  /* ln */, Widget  /* w */, Dimension  /* reqwide */, Dimension  /* reqhigh */, Dimension * /* gotwide */, Dimension * /* gothigh */);
+extern	XtGeometryResult TraceResizeRequest(const char * /* fn */, int  /* ln */, Widget  /* w */, unsigned  /* reqwide */, unsigned  /* reqhigh */, Dimension * /* gotwide */, Dimension * /* gothigh */);
 #undef  REQ_RESIZE
 #define REQ_RESIZE(w, reqwide, reqhigh, gotwide, gothigh) \
 	TraceResizeRequest(__FILE__, __LINE__, w, \
-			   (Dimension) (reqwide), (Dimension) (reqhigh), \
+			   (reqwide), (reqhigh), \
 			   (gotwide), (gothigh))
 
 #else
@@ -119,5 +123,47 @@ extern	int	TraceResizeRequest(const char * /* fn */, int  /* ln */, Widget  /* w
 			    (gotwide), (gothigh))
 
 #endif
+
+/*
+ * The whole wnew->screen struct is zeroed in VTInitialize.  Use these macros
+ * where applicable for copying the pieces from the request widget into the
+ * new widget.  We do not have to use them for wnew->misc, but the associated
+ * traces are very useful for debugging.
+ */
+#if OPT_TRACE
+#define init_Bres(name) \
+	TRACE(("init " #name " = %s\n", \
+		BtoS(wnew->name = request->name)))
+#define init_Dres(name) \
+	TRACE(("init " #name " = %f\n", \
+		wnew->name = request->name))
+#define init_Dres2(name,i) \
+	TRACE(("init " #name "[%d] = %f\n", i, \
+		wnew->name[i] = request->name[i]))
+#define init_Ires(name) \
+	TRACE(("init " #name " = %d\n", \
+		wnew->name = request->name))
+#define init_Sres(name) \
+	TRACE(("init " #name " = \"%s\"\n", \
+		(wnew->name = x_strtrim(request->name)) != NULL \
+			? wnew->name : "<null>"))
+#define init_Sres2(name,i) \
+	TRACE(("init " #name "[%d] = \"%s\"\n", i, \
+		(wnew->name(i) = x_strtrim(request->name(i))) != NULL \
+			? wnew->name(i) : "<null>"))
+#define init_Tres(offset) \
+	TRACE(("init screen.Tcolors[" #offset "] = %#lx\n", \
+		fill_Tres(wnew, request, offset)))
+#else
+#define init_Bres(name)    wnew->name = request->name
+#define init_Dres(name)    wnew->name = request->name
+#define init_Dres2(name,i) wnew->name[i] = request->name[i]
+#define init_Ires(name)    wnew->name = request->name
+#define init_Sres(name)    wnew->name = x_strtrim(request->name)
+#define init_Sres2(name,i) wnew->name(i) = x_strtrim(request->name(i))
+#define init_Tres(offset)  fill_Tres(wnew, request, offset)
+#endif
+
+/* *INDENT-ON* */
 
 #endif	/* included_trace_h */

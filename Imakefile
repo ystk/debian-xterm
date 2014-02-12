@@ -1,4 +1,4 @@
-XCOMM $XTermId: Imakefile,v 1.102 2009/04/27 19:26:34 tom Exp $
+XCOMM $XTermId: Imakefile,v 1.105 2011/11/29 10:19:20 Thorsten.Glaser Exp $
 XCOMM
 XCOMM                         Attention xterm porters
 XCOMM
@@ -6,8 +6,6 @@ XCOMM
 XCOMM Xterm assumes that bcopy can handle overlapping arguments.  If your
 XCOMM bcopy (or memcpy) cannot, write a routine called bcopy and link it in
 XCOMM or add -Dbcopy=mybcopy to the DEFINES list below.
-XCOMM
-XCOMM $XFree86: xc/programs/xterm/Imakefile,v 3.73 2006/04/10 00:34:36 dickey Exp $
 XCOMM
 
 /* Uncomment SCROLLBAR_RIGHT if you want the scroll bar to be on the right */
@@ -144,6 +142,17 @@ module.o: ; $(CC) -c defines $(CFLAGS) module.c
  OSMAJORVERSION = OSMajorVersion
  OSMINORVERSION = OSMinorVersion
 
+#if	defined(NTOArchitecture)	|| \
+	defined(OpenBSDArchitecture)	|| \
+	defined(SGIArchitecture)	|| \
+	defined(SunArchitecture)
+TERMCAPDEFINES=-DUSE_TERMINFO -DHAVE_TIGETSTR
+#elif   defined(LinuxArchitecture)
+# if LinuxUsesNcurses
+TERMCAPDEFINES=-DUSE_TERMINFO -DHAVE_TIGETSTR
+# endif
+#endif
+
 #if !defined(OS2Architecture) && !defined(__GNU__)
 #if defined(UseUtempter)
         UTMPDEF = -DUSE_UTEMPTER
@@ -242,6 +251,11 @@ SpecialCObjectRule(data,$(_NOOP_),$(MISC_DEFINES))
 SetUIDProgramTarget(xterm,$(OBJS1),$(DEPLIBS1),$(XRFLIBS) XkbClientLibs XawClientLibs,$(TERMCAPLIB) $(PTYLIB))
 #else
 NormalProgramTarget(xterm,$(OBJS1),$(DEPLIBS1),$(XRFLIBS) XkbClientLibs XawClientLibs,$(TERMCAPLIB) $(UTMPLIB) $(PTYLIB))
+#endif
+
+#if defined(OpenBSDArchitecture) || defined(MirBSDArchitecture)
+/* On OpenBSD xterm is now setgid utmp */
+INSTUIDFLAGS= -m 2555 -g utmp
 #endif
 
 #if InstallXtermSetUID && defined(SunArchitecture) && HasSharedLibraries && (OSMajorVersion < 5)

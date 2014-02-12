@@ -1,3 +1,169 @@
+xterm (278-4) unstable; urgency=low
+
+  * Update copy of XTerm FAQ to revision 1.199 (dated 2012/11/11).
+
+ -- Julien Cristau <jcristau@debian.org>  Tue, 27 Nov 2012 20:17:49 +0100
+
+xterm (278-3) unstable; urgency=low
+
+  [ Timo Aaltonen ]
+  * control: Mark the package as Multi-Arch: foreign.
+
+  [ Julien Cristau ]
+  * Apply a few patches recommended by upstream in #694375 (thanks!)
+    - amend patch from 278-2 to catch more cases
+    - amend fix for Debian #650291 in patch #277 changes to account for
+      different data returned by vnc4server (closes: #670638)
+    - correct macro definition used for testing modes used in ANSI/DEC
+      request-mode controls introduced in patch #262
+    - add a null-pointer check in OkPasswd macro to fix a problem in resize
+      with Fedora 17 and a serial console (report/patch by Daniel Drake).
+
+ -- Julien Cristau <jcristau@debian.org>  Tue, 27 Nov 2012 19:57:47 +0100
+
+xterm (278-2) unstable; urgency=low
+
+  * Fix crash in Tektronix mode (Closes: #685458).
+
+ -- Cyril Brulebois <kibi@debian.org>  Mon, 27 Aug 2012 02:14:38 +0200
+
+xterm (278-1) unstable; urgency=low
+
+  * New upstream release
+    - move call to grantpt before asking utempter to add a record, to work
+      with kFreeBSD which does not update the terminal's ownership until this
+      point (closes: #652907)
+    - document limitation of XIM interface in manpage (see #230787)
+    - add four new actions for making the selection or data directly copied
+      from the screen: exec-formatted, exec-selectable, insert-formatted,
+      insert-selectable (closes: #637001)
+    - add eightBitMeta resource to control the features which modify or
+      interpret the eighth bit of a key when the meta modifier key is pressed
+      (prompted by #326200)
+    - improve discussion of eightBitInput in the manpage (prompted by #326200)
+    - add a workaround for XAllocColor(), which does not actually allocate "a
+      read-only colormap entry corresponding to the closest RGB value
+      supported by the hardware", but rather a rough approximation (closes:
+      #650291)
+  * Update copy of XTerm FAQ to revision 1.180 (dated 2012/02/06).
+
+ -- Julien Cristau <jcristau@debian.org>  Mon, 09 Apr 2012 21:45:01 +0200
+
+xterm (276-2) unstable; urgency=low
+
+  * Team upload.
+
+  [ Julien Cristau ]
+  * Pass -DFOO in CPPFLAGS, not CFLAGS.
+  * Update copyright year in debian/copyright.
+  * Bump Standards-Version to 3.9.2, no changes needed.
+  * Remove David Nusinow from Uploaders.
+  * Enable hardened build flags through dpkg-buildflags (closes: #653488).
+    Based on patch by Moritz Muehlenhoff, thanks!
+
+  [ Sven Joachim ]
+  * Update 900_debian_xterm.diff:
+    - Disable rmm and smm features in xterm-new rather than xterm, so
+      that they do not become enabled in e.g. xterm-256color.
+
+ -- Julien Cristau <jcristau@debian.org>  Sat, 31 Dec 2011 19:00:02 +0100
+
+xterm (276-1) unstable; urgency=low
+
+  [ Timo Aaltonen ]
+  * Install .desktop files again. (Closes: #486317, LP: #129041)
+
+  [ Julien Cristau ]
+  * New upstream release
+    + document limitation of Gtk in connection with xterm's "-into" option, in
+      the manpage (LP: #806969)
+    + fix regression in command-line parsing introduced in patch #271 changes
+      for Debian #629358 (closes: #637910)
+  * Don't use dh_testroot in clean.
+  * Update 900_debian_xterm.diff to only edit the new xterm+kbs fragment in
+    both terminfo and termcap instead of adding an xterm-debian variant to
+    change the backspace key behaviour.
+  * Update copy of XTerm FAQ to revision 1.168 (dated 2011/09/12).
+
+  [ Sven Joachim ]
+  * Update 900_debian_xterm.diff:
+    - Add xterm-debian terminfo entry as an alias for xterm.
+    - Disable rmm and smm features in xterm terminfo entry to match the
+      behavior in ncurses-base (see #574396).
+
+ -- Julien Cristau <jcristau@debian.org>  Sat, 15 Oct 2011 19:38:42 +0200
+
+xterm (271-1) unstable; urgency=low
+
+  * New upstream release
+    - amend change for Debian #110226 so that "-h" or "-v" options cause an
+      exit, rather than simply printing to stdout while the window is
+      displayed (closes: #629358)
+    - handle special-case of KeyPress translated to popup-menu action
+      (LP: #756273)
+
+ -- Julien Cristau <jcristau@debian.org>  Sat, 23 Jul 2011 13:55:37 +0200
+
+xterm (270-1) unstable; urgency=low
+
+  * New upstream release:
+    - Add printModeOnXError and printFileOnXError resources, which allow
+      the user to specify that xterm will write the contents of its screen
+      to a file if it is exiting due to an X error (Closes: #280457).
+    - Fix translations vs. fullscreen initializations to handle a corner
+      case (Closes: #612978).
+
+ -- Cyril Brulebois <kibi@debian.org>  Fri, 03 Jun 2011 00:05:53 +0200
+
+xterm (269-1) unstable; urgency=low
+
+  * New upstream release:
+    - Make the fullscreen feature configurable (Closes: #612978).
+
+ -- Cyril Brulebois <kibi@debian.org>  Sat, 05 Mar 2011 17:05:05 +0100
+
+xterm (268-1) unstable; urgency=low
+
+  [ Sven Joachim ]
+  * Prefer lynx-cur over lynx in Build-Depends.
+  * Update xsfbs.
+  * Drop useless debian/xterm.dirs.
+  * Stop recommending the transitional xutils package.
+  * Mention ncurses-base in README.Debian (Closes: #373139).
+  * Do not manually gzip the text version of the FAQ, dh_compress can take
+    care of that.
+
+  [ Julien Cristau ]
+  * Update copy of XTerm FAQ to revision 1.167 (dated 2010/11/25)
+  * New upstream release (267)
+    + add copy-selection action (request by Timo Juhani Lindfors,
+      closes: #588785
+  * New upstream release (268)
+    + fix an inconsistency of the "Enable Reverse Video" checkbox in the VT
+      Options menu.  This also removes a special case added in patch #217
+      which limited the effect of the reverseVideo resource (closes: #603808)
+
+ -- Julien Cristau <jcristau@debian.org>  Thu, 10 Feb 2011 18:48:37 +0100
+
+xterm (266-1) unstable; urgency=low
+
+  * New upstream release (Closes: #601103, yay for patience…):
+    + Fix a regression in fontname logic from patch #263, thanks to
+      Vincent Lefevre (Closes: #600707).
+  * Fix watch file: use PASV mode.
+
+ -- Cyril Brulebois <kibi@debian.org>  Wed, 27 Oct 2010 14:23:02 +0200
+
+xterm (264-1) unstable; urgency=low
+
+  * New upstream release:
+    + Fix active-icon in specific cases (Closes: #591265).
+    + Fix pointer visibility issues (Closes: #594856).
+    + Fix segmentation fault with -fb and other options (Closes: #600129).
+  * Add myself to Uploaders.
+
+ -- Cyril Brulebois <kibi@debian.org>  Thu, 14 Oct 2010 23:53:57 +0200
+
 xterm (261-1) unstable; urgency=low
 
   * New upstream release

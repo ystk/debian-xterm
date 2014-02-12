@@ -17,9 +17,9 @@ numeric keypad, the one with Page Up, Page Down, etc. on a PC keyboard).
 DEC VT100's, the text terminal wich xterm was designed to emulate, had no
 keypad delete key.  ^[[3~ is also what the Linux console terminal type
 generates for the keypad delete key.  Note that the terminal definitions
-that a Debian system uses are in the ncurses-term package, not in the xterm
-package itself, though the (pre-compiled) terminfo and termcap files that
-Debian uses may be found in the xterm documentation directory,
+that a Debian system uses are in the ncurses-base and ncurses-term
+packages, not in the xterm package itself, though the terminfo and termcap
+files that Debian uses may be found in the xterm documentation directory,
 /usr/share/doc/xterm.  People interested in reading further to stock up
 ammo for their backspace/delete and terminal type wars should consult Tom
 Dickey's (current maintainer of the xterm source code) FAQ, available in

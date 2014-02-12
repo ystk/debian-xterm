@@ -1,36 +1,34 @@
-/* $XTermId: xterm.h,v 1.628 2010/06/20 21:34:48 tom Exp $ */
+/* $XTermId: xterm.h,v 1.673 2011/12/27 09:51:07 tom Exp $ */
 
-/************************************************************
-
-Copyright 1999-2009,2010 by Thomas E. Dickey
-
-                        All Rights Reserved
-
-Permission is hereby granted, free of charge, to any person obtaining a
-copy of this software and associated documentation files (the
-"Software"), to deal in the Software without restriction, including
-without limitation the rights to use, copy, modify, merge, publish,
-distribute, sublicense, and/or sell copies of the Software, and to
-permit persons to whom the Software is furnished to do so, subject to
-the following conditions:
-
-The above copyright notice and this permission notice shall be included
-in all copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
-OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
-MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
-IN NO EVENT SHALL THE ABOVE LISTED COPYRIGHT HOLDER(S) BE LIABLE FOR ANY
-CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
-TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
-SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-
-Except as contained in this notice, the name(s) of the above copyright
-holders shall not be used in advertising or otherwise to promote the
-sale, use or other dealings in this Software without prior written
-authorization.
-
-********************************************************/
+/*
+ * Copyright 1999-2010,2011 by Thomas E. Dickey
+ *
+ *                         All Rights Reserved
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a
+ * copy of this software and associated documentation files (the
+ * "Software"), to deal in the Software without restriction, including
+ * without limitation the rights to use, copy, modify, merge, publish,
+ * distribute, sublicense, and/or sell copies of the Software, and to
+ * permit persons to whom the Software is furnished to do so, subject to
+ * the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included
+ * in all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
+ * OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+ * MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+ * IN NO EVENT SHALL THE ABOVE LISTED COPYRIGHT HOLDER(S) BE LIABLE FOR ANY
+ * CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
+ * TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
+ * SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+ *
+ * Except as contained in this notice, the name(s) of the above copyright
+ * holders shall not be used in advertising or otherwise to promote the
+ * sale, use or other dealings in this Software without prior written
+ * authorization.
+ */
 
 /*
  * Common/useful definitions for XTERM application.
@@ -40,9 +38,14 @@ authorization.
  */
 #ifndef included_xterm_h
 #define included_xterm_h
+/* *INDENT-OFF* */
 
 #ifdef HAVE_CONFIG_H
 #include <xtermcfg.h>
+#endif
+
+#ifndef GCC_PRINTFLIKE
+#define GCC_PRINTFLIKE(f,n)	/* nothing */
 #endif
 
 #ifndef GCC_UNUSED
@@ -335,6 +338,7 @@ extern char **environ;
 
 /***====================================================================***/
 
+#define XtNallowBoldFonts	"allowBoldFonts"
 #define XtNallowC1Printable	"allowC1Printable"
 #define XtNallowColorOps	"allowColorOps"
 #define XtNallowFontOps		"allowFontOps"
@@ -393,6 +397,7 @@ extern char **environ;
 #define XtNdynamicColors	"dynamicColors"
 #define XtNeightBitControl	"eightBitControl"
 #define XtNeightBitInput	"eightBitInput"
+#define XtNeightBitMeta		"eightBitMeta"
 #define XtNeightBitOutput	"eightBitOutput"
 #define XtNeightBitSelectTypes	"eightBitSelectTypes"
 #define XtNfaceName		"faceName"
@@ -412,6 +417,7 @@ extern char **environ;
 #define XtNforcePackedFont	"forcePackedFont"
 #define XtNformatOtherKeys	"formatOtherKeys"
 #define XtNfreeBoldBox		"freeBoldBox"
+#define XtNfullscreen		"fullscreen"
 #define XtNhighlightColor	"highlightColor"
 #define XtNhighlightColorMode	"highlightColorMode"
 #define XtNhighlightReverse	"highlightReverse"
@@ -469,6 +475,7 @@ extern char **environ;
 #define XtNreverseWrap		"reverseWrap"
 #define XtNrightScrollBar	"rightScrollBar"
 #define XtNsaveLines		"saveLines"
+#define XtNscaleHeight		"scaleHeight"
 #define XtNscrollBar		"scrollBar"
 #define XtNscrollBarBorder	"scrollBarBorder"
 #define XtNscrollKey		"scrollKey"
@@ -479,6 +486,7 @@ extern char **environ;
 #define XtNshiftFonts		"shiftFonts"
 #define XtNshowBlinkAsBold	"showBlinkAsBold"
 #define XtNshowMissingGlyphs	"showMissingGlyphs"
+#define XtNshowWrapMarks	"showWrapMarks"
 #define XtNsignalInhibit	"signalInhibit"
 #define XtNtekGeometry		"tekGeometry"
 #define XtNtekInhibit		"tekInhibit"
@@ -492,12 +500,14 @@ extern char **environ;
 #define XtNunderLine		"underLine"
 #define XtNuseClipping		"useClipping"
 #define XtNutf8			"utf8"
+#define XtNutf8Fonts		"utf8Fonts"
 #define XtNutf8Latin1		"utf8Latin1"
 #define XtNutf8SelectTypes	"utf8SelectTypes"
 #define XtNutf8Title		"utf8Title"
 #define XtNveryBoldColors	"veryBoldColors"
 #define XtNvisualBell		"visualBell"
 #define XtNvisualBellDelay	"visualBellDelay"
+#define XtNvisualBellLine	"visualBellLine"
 #define XtNvt100Graphics	"vt100Graphics"
 #define XtNwideBoldFont		"wideBoldFont"
 #define XtNwideChars		"wideChars"
@@ -508,6 +518,7 @@ extern char **environ;
 #define XtNxmcInline		"xmcInline"
 #define XtNxmcMoveSGR		"xmcMoveSGR"
 
+#define XtCAllowBoldFonts	"AllowBoldFonts"
 #define XtCAllowC1Printable	"AllowC1Printable"
 #define XtCAllowColorOps	"AllowColorOps"
 #define XtCAllowFontOps		"AllowFontOps"
@@ -538,7 +549,7 @@ extern char **environ;
 #define XtCC132			"C132"
 #define XtCCacheDoublesize	"CacheDoublesize"
 #define XtCCharClass		"CharClass"
-#define XtCCjkWidth 		"CjkWidth"
+#define XtCCjkWidth		"CjkWidth"
 #define XtCColorAttrMode	"ColorAttrMode"
 #define XtCColorMode		"ColorMode"
 #define XtCColumn		"Column"
@@ -561,6 +572,7 @@ extern char **environ;
 #define XtCDynamicColors	"DynamicColors"
 #define XtCEightBitControl	"EightBitControl"
 #define XtCEightBitInput	"EightBitInput"
+#define XtCEightBitMeta		"EightBitMeta"
 #define XtCEightBitOutput	"EightBitOutput"
 #define XtCEightBitSelectTypes	"EightBitSelectTypes"
 #define XtCFaceName		"FaceName"
@@ -580,6 +592,7 @@ extern char **environ;
 #define XtCForcePackedFont	"ForcePackedFont"
 #define XtCFormatOtherKeys	"FormatOtherKeys"
 #define XtCFreeBoldBox		"FreeBoldBox"
+#define XtCFullscreen		"Fullscreen"
 #define XtCHighlightColorMode	"HighlightColorMode"
 #define XtCHighlightReverse	"HighlightReverse"
 #define XtCHighlightSelection	"HighlightSelection"
@@ -603,7 +616,7 @@ extern char **environ;
 #define XtCMetaSendsEscape	"MetaSendsEscape"
 #define XtCMkSamplePass 	"MkSamplePass"
 #define XtCMkSampleSize 	"MkSampleSize"
-#define XtCMkWidth 		"MkWidth"
+#define XtCMkWidth		"MkWidth"
 #define XtCModifyCursorKeys	"ModifyCursorKeys"
 #define XtCModifyFunctionKeys	"ModifyFunctionKeys"
 #define XtCModifyKeypadKeys	"ModifyKeypadKeys"
@@ -629,6 +642,7 @@ extern char **environ;
 #define XtCReverseWrap		"ReverseWrap"
 #define XtCRightScrollBar	"RightScrollBar"
 #define XtCSaveLines		"SaveLines"
+#define XtCScaleHeight		"ScaleHeight"
 #define XtCScrollBar		"ScrollBar"
 #define XtCScrollBarBorder	"ScrollBarBorder"
 #define XtCScrollCond		"ScrollCond"
@@ -638,6 +652,7 @@ extern char **environ;
 #define XtCShiftFonts		"ShiftFonts"
 #define XtCShowBlinkAsBold	"ShowBlinkAsBold"
 #define XtCShowMissingGlyphs	"ShowMissingGlyphs"
+#define XtCShowWrapMarks	"ShowWrapMarks"
 #define XtCSignalInhibit	"SignalInhibit"
 #define XtCTekInhibit		"TekInhibit"
 #define XtCTekSmall		"TekSmall"
@@ -650,6 +665,7 @@ extern char **environ;
 #define XtCUnderLine		"UnderLine"
 #define XtCUseClipping		"UseClipping"
 #define XtCUtf8			"Utf8"
+#define XtCUtf8Fonts		"Utf8Fonts"
 #define XtCUtf8Latin1		"Utf8Latin1"
 #define XtCUtf8SelectTypes	"Utf8SelectTypes"
 #define XtCUtf8Title		"Utf8Title"
@@ -657,6 +673,7 @@ extern char **environ;
 #define XtCVeryBoldColors	"VeryBoldColors"
 #define XtCVisualBell		"VisualBell"
 #define XtCVisualBellDelay	"VisualBellDelay"
+#define XtCVisualBellLine	"VisualBellLine"
 #define XtCWideBoldFont		"WideBoldFont"
 #define XtCWideChars		"WideChars"
 #define XtCWideFont		"WideFont"
@@ -713,7 +730,7 @@ extern void TekSimulatePageButton (TekWidget /* tw */, Bool /* reset */);
 #endif
 
 /* button.c */
-#define	MotionOff( s, t ) {						\
+#define	MotionOff( s, t ) if (!(screen->hide_pointer)) {		\
 	    (s)->event_mask |= ButtonMotionMask;			\
 	    (s)->event_mask &= ~PointerMotionMask;			\
 	    XSelectInput(XtDisplay((t)), XtWindow((t)), (long) (s)->event_mask); }
@@ -727,6 +744,7 @@ extern Bool SendMousePosition (XtermWidget  /* w */, XEvent*  /* event */);
 extern void DiredButton                PROTO_XT_ACTIONS_ARGS;
 extern void DisownSelection (XtermWidget  /* termw */);
 extern void UnhiliteSelection (XtermWidget  /* termw */);
+extern void HandleCopySelection        PROTO_XT_ACTIONS_ARGS;
 extern void HandleInsertSelection      PROTO_XT_ACTIONS_ARGS;
 extern void HandleKeyboardSelectEnd    PROTO_XT_ACTIONS_ARGS;
 extern void HandleKeyboardSelectExtend PROTO_XT_ACTIONS_ARGS;
@@ -796,6 +814,7 @@ extern void noleaks_cachedCgs (XtermWidget /* xw */);
 
 /* charproc.c */
 extern Bool CheckBufPtrs (TScreen * /* screen */);
+extern Bool set_cursor_gcs (XtermWidget /* xw */);
 extern int VTInit (XtermWidget /* xw */);
 extern void FindFontSelection (XtermWidget /* xw */, const char * /* atom_name */, Bool  /* justprobe */);
 extern void HideCursor (void);
@@ -803,13 +822,14 @@ extern void RestartBlinking(TScreen * /* screen */);
 extern void ShowCursor (void);
 extern void SwitchBufPtrs (TScreen * /* screen */, int /* toBuf */);
 extern void ToggleAlternate (XtermWidget /* xw */);
-extern void VTReset (XtermWidget /* xw */, int /* full */, int /* saved */);
+extern void VTInitTranslations (void);
+extern void VTReset (XtermWidget /* xw */, int /* full */, int /* saved */) GCC_NORETURN;
 extern void VTRun (XtermWidget /* xw */);
 extern void dotext (XtermWidget /* xw */, int  /* charset */, IChar * /* buf */, Cardinal  /* len */);
+extern void lookupSelectUnit(XtermWidget /* xw */, Cardinal /* item */, String /* value */);
 extern void releaseCursorGCs(XtermWidget /*xw*/);
 extern void releaseWindowGCs(XtermWidget /*xw*/, VTwin * /*win*/);
 extern void resetCharsets (TScreen * /* screen */);
-extern void set_cursor_gcs (XtermWidget /* xw */);
 extern void set_max_col(TScreen *  /* screen */, int  /* cols */);
 extern void set_max_row(TScreen *  /* screen */, int  /* rows */);
 extern void set_tb_margins (TScreen * /* screen */, int  /* top */, int  /* bottom */);
@@ -819,11 +839,15 @@ extern void unparseputc1 (XtermWidget /* xw */, int  /* c */);
 extern void unparseputn (XtermWidget /* xw */, unsigned /* n */);
 extern void unparseputs (XtermWidget /* xw */, const char * /* s */);
 extern void unparseseq (XtermWidget /* xw */, ANSI * /* ap */);
-extern void v_write (int  /* f */, Char * /* d */, unsigned  /* len */);
+extern void v_write (int  /* f */, const Char * /* d */, unsigned  /* len */);
 extern void xtermAddInput(Widget  /* w */);
 
 #if OPT_BLINK_CURS
 extern void ToggleCursorBlink(TScreen * /* screen */);
+#endif
+
+#if OPT_INPUT_METHOD
+extern TInput *lookupTInput (XtermWidget /* xw */, Widget /* w */);
 #endif
 
 #if OPT_ISO_COLORS
@@ -910,7 +934,7 @@ extern void first_map_occurred (void);
 #endif
 
 #ifdef SIGNAL_T
-extern SIGNAL_T Exit (int  /* n */);
+extern SIGNAL_T Exit (int  /* n */) GCC_NORETURN;
 #endif
 
 #ifndef SIG_ATOMIC_T
@@ -928,22 +952,27 @@ extern void repairSizeHints    (void);
 extern void show_8bit_control  (Bool  /* value */);
 
 /* misc.c */
+
+#define TIMESTAMP_LEN 20	/* length of TIMESTAMP_FMT */
+
 extern Bool AllocateTermColor(XtermWidget, ScrnColors *, int, const char *, Bool);
 extern Cursor make_colored_cursor (unsigned /* cursorindex */, unsigned long  /* fg */, unsigned long  /* bg */);
 extern OptionHelp * sortedOpts(OptionHelp *, XrmOptionDescRec *, Cardinal);
+extern String xtermEnvLocale (void);
+extern Widget xtermOpenApplication(XtAppContext * /* app_context_return */, String /* application_class */, XrmOptionDescRec */* options */, Cardinal /* num_options */, int * /* argc_in_out */, String */* argv_in_out */, String * /* fallback_resources */, WidgetClass /* widget_class */, ArgList /* args */, Cardinal /* num_args */);
 extern Window WMFrameWindow(XtermWidget /* termw */);
+extern XtInputMask xtermAppPending (void);
 extern XrmOptionDescRec * sortedOptDescs(XrmOptionDescRec *, Cardinal);
 extern XtermWidget getXtermWidget(Widget /* w */);
 extern char *udk_lookup (int /* keycode */, int * /* len */);
 extern char *xtermEnvEncoding (void);
-extern char *xtermEnvLocale (void);
 extern char *xtermFindShell(char * /* leaf */, Bool  /* warning */);
 extern char *xtermVersion(void);
 extern const char *SysErrorMsg (int /* n */);
 extern const char *SysReasonMsg (int /* n */);
 extern int ResetAnsiColorRequest(XtermWidget, char *, int);
 extern int XStrCmp (char * /* s1 */, char * /* s2 */);
-extern int creat_as (uid_t  /* uid */, gid_t  /* gid */, Bool  /* append */, char * /* pathname */, int  /* mode */);
+extern int creat_as (uid_t  /* uid */, gid_t  /* gid */, Bool  /* append */, char * /* pathname */, unsigned  /* mode */);
 extern int open_userfile (uid_t  /* uid */, gid_t  /* gid */, char * /* path */, Bool  /* append */);
 extern int xerror (Display * /* d */, XErrorEvent * /* ev */);
 extern int xioerror (Display * /* dpy */);
@@ -964,11 +993,14 @@ extern void HandleSpawnTerminal        PROTO_XT_ACTIONS_ARGS;
 extern void HandleStringEvent          PROTO_XT_ACTIONS_ARGS;
 extern void Panic (const char * /* s */, int  /* a */);
 extern void Redraw (void);
+extern void ice_error (IceConn /* iceConn */);
 extern void ReverseOldColors (void);
-extern void SysError (int  /* i */) GCC_NORETURN;
+extern void SysError (int /* i */) GCC_NORETURN;
 extern void VisualBell (void);
 extern void do_dcs (XtermWidget /* xw */, Char * /* buf */, size_t  /* len */);
+extern void do_decrpm (XtermWidget /* xw */, int /* nparam */, int *  /* params */);
 extern void do_osc (XtermWidget /* xw */, Char * /* buf */, size_t  /* len */, int  /* final */);
+extern void do_rpm (XtermWidget /* xw */, int /* nparam */, int *  /* params */);
 extern void do_xevents (void);
 extern void end_tek_mode (void);
 extern void end_vt_mode (void);
@@ -984,8 +1016,12 @@ extern void xt_error (String  /* message */);
 extern void xtermBell(XtermWidget /* xw */, int /* which */, int /* percent */);
 extern void xtermCopyEnv (char ** /* oldenv */);
 extern void xtermDisplayCursor (XtermWidget /* xw */);
+extern void xtermEmbedWindow(Window /* winToEmbedInfo */);
+extern void xtermPerror (const char * /*fmt*/,...) GCC_PRINTFLIKE(1,2);
 extern void xtermSetenv (const char * /* var */, const char * /* value */);
 extern void xtermShowPointer (XtermWidget /* xw */, Bool /* enable */);
+extern void xtermUnsetenv (const char * /* var */);
+extern void xtermWarning (const char * /*fmt*/,...) GCC_PRINTFLIKE(1,2);
 
 #if OPT_DABBREV
 extern void HandleDabbrevExpand        PROTO_XT_ACTIONS_ARGS;
@@ -1013,6 +1049,21 @@ extern void xtermClearLEDs (TScreen * /* screen */);
 #define GetScrollLock(screen) /* nothing */
 #endif
 
+#if OPT_SELECTION_OPS
+extern void HandleExecFormatted        PROTO_XT_ACTIONS_ARGS;
+extern void HandleExecSelectable       PROTO_XT_ACTIONS_ARGS;
+extern void HandleInsertFormatted      PROTO_XT_ACTIONS_ARGS;
+extern void HandleInsertSelectable     PROTO_XT_ACTIONS_ARGS;
+#endif
+
+#if OPT_SESSION_MGT
+extern void xtermCloseSession (void);
+extern void xtermOpenSession (void);
+#else
+#define xtermCloseSession() /* nothing */
+#define xtermOpenSession() /* nothing */
+#endif
+
 #if OPT_WIDE_CHARS
 extern Bool xtermEnvUTF8(void);
 #else
@@ -1029,13 +1080,16 @@ extern void FlushLog (XtermWidget /* xw */);
 
 /* print.c */
 extern Bool xtermHasPrinter (XtermWidget /* xw */);
-extern PrinterFlags *getPrinterFlags(XtermWidget /* xw */, String * /* params */, Cardinal * /* param_count */);
+extern PrinterFlags *getPrinterFlags (XtermWidget /* xw */, String * /* params */, Cardinal * /* param_count */);
 extern int xtermPrinterControl (XtermWidget /* xw */, int /* chr */);
+extern void closePrinter (XtermWidget /* xw */);
 extern void setPrinterControlMode (XtermWidget /* xw */, int /* mode */);
 extern void xtermAutoPrint (XtermWidget /* xw */, unsigned /* chr */);
 extern void xtermMediaControl (XtermWidget /* xw */, int  /* param */, int  /* private_seq */);
 extern void xtermPrintScreen (XtermWidget /* xw */, Bool  /* use_DECPEX */, PrinterFlags * /* p */);
 extern void xtermPrintEverything (XtermWidget /* xw */, PrinterFlags * /* p */);
+extern void xtermPrintImmediately (XtermWidget /* xw */, String /* filename */, int /* opts */, int /* attributes */);
+extern void xtermPrintOnXError (XtermWidget /* xw */, int /* n */);
 
 /* ptydata.c */
 #ifdef VMS
@@ -1070,10 +1124,10 @@ extern void writePtyData (int  /* f */, IChar * /* d */, unsigned  /* len */);
 	 : False)
 #else
 #define morePtyData(screen, data) ((data)->last > (data)->next)
-#define nextPtyData(screen, data) (*((data)->next++) & \
-					(screen->output_eight_bits \
-					? 0xff \
-					: 0x7f))
+#define nextPtyData(screen, data) (IChar) (*((data)->next++) & \
+					   (screen->output_eight_bits \
+					    ? 0xff \
+					    : 0x7f))
 #define writePtyData(f,d,len) v_write(f,d,len)
 #endif
 
@@ -1086,17 +1140,21 @@ extern int ScreenResize (XtermWidget /* xw */, int  /* width */, int  /* height 
 extern size_t ScrnPointers (TScreen * /* screen */, size_t  /* len */);
 extern void ClearBufRows (XtermWidget /* xw */, int  /* first */, int  /* last */);
 extern void ClearCells (XtermWidget /* xw */, int /* flags */, unsigned /* len */, int /* row */, int /* col */);
+extern void FullScreen(XtermWidget /* xw */, Bool /* enabled */);
 extern void ScrnAllocBuf (XtermWidget /* xw */);
 extern void ScrnClearCells (XtermWidget /* xw */, int /* row */, int /* col */, unsigned /* len */);
 extern void ScrnDeleteChar (XtermWidget /* xw */, unsigned  /* n */);
+extern void ScrnDeleteCol (XtermWidget /* xw */, unsigned  /* n */);
 extern void ScrnDeleteLine (XtermWidget /* xw */, ScrnBuf  /* sb */, int  /* n */, int  /* last */, unsigned /* where */);
 extern void ScrnDisownSelection (XtermWidget /* xw */);
 extern void ScrnFillRectangle (XtermWidget /* xw */, XTermRect *,  int ,  unsigned /* flags */, Bool /* keepColors */);
 extern void ScrnInsertChar (XtermWidget /* xw */, unsigned  /* n */);
+extern void ScrnInsertCol (XtermWidget /* xw */, unsigned  /* n */);
 extern void ScrnInsertLine (XtermWidget /* xw */, ScrnBuf /* sb */, int  /* last */, int  /* where */, unsigned  /* n */);
 extern void ScrnRefresh (XtermWidget /* xw */, int  /* toprow */, int  /* leftcol */, int  /* nrows */, int  /* ncols */, Bool  /* force */);
 extern void ScrnUpdate (XtermWidget /* xw */, int  /* toprow */, int  /* leftcol */, int  /* nrows */, int  /* ncols */, Bool  /* force */);
 extern void ScrnWriteText (XtermWidget /* xw */, IChar * /* str */, unsigned  /* flags */, unsigned /* cur_fg_bg */, unsigned  /* length */);
+extern void ShowWrapMarks (XtermWidget /* xw */, int /* row */, LineData * /* ld */);
 extern void setupLineData (TScreen * /* screen */, ScrnBuf /* base */, Char * /* data */, unsigned /* nrow */, unsigned /* ncol */);
 extern void xtermParseRect (XtermWidget /* xw */, int, int *, XTermRect *);
 
@@ -1187,7 +1245,9 @@ extern GC updatedXtermGC (XtermWidget /* xw */, unsigned  /* flags */, unsigned 
 extern int AddToRefresh (XtermWidget /* xw */);
 extern int ClearInLine (XtermWidget /* xw */, int /* row */, int /* col */, unsigned /* len */);
 extern int HandleExposure (XtermWidget /* xw */, XEvent * /* event */);
+extern int dimRound (double /* value */);
 extern int drawXtermText (XtermWidget /* xw */, unsigned /* flags */, GC /* gc */, int /* x */, int /* y */, int /* chrset */, IChar * /* text */, Cardinal /* len */, int /* on_wide */);
+extern int extendedBoolean(const char * /* value */, FlagList * /* table */, Cardinal /* limit */);
 extern void ChangeColors (XtermWidget  /* xw */, ScrnColors * /* pNew */);
 extern void ClearRight (XtermWidget /* xw */, int /* n */);
 extern void ClearScreen (XtermWidget /* xw */);
@@ -1213,8 +1273,11 @@ extern void set_keyboard_type (XtermWidget /* xw */, xtermKeyboardType  /* type 
 extern void toggle_keyboard_type (XtermWidget /* xw */, xtermKeyboardType  /* type */);
 extern void update_keyboard_type (void);
 extern void xtermClear (XtermWidget /* xw */);
+extern void xtermColIndex (XtermWidget /* xw */, Bool /* toLeft */);
+extern void xtermColScroll (XtermWidget /* xw */, int /* amount */, Bool /* toLeft */, int /* at_col */);
 extern void xtermRepaint (XtermWidget /* xw */);
 extern void xtermScroll (XtermWidget /* xw */, int /* amount */);
+extern void xtermScrollLR (XtermWidget /* xw */, int /* amount */, Bool /* toLeft */);
 extern void xtermSizeHints (XtermWidget  /* xw */, int /* scrollbarWidth */);
 
 #if OPT_ISO_COLORS
@@ -1255,10 +1318,10 @@ extern Pixel xtermGetColorRes(XtermWidget /* xw */, ColorRes * /* res */);
 #define MapToColorMode(fg, screen, flags) \
 	(((screen)->colorBLMode && ((flags) & BLINK)) \
 	 ? COLOR_BL \
-	 : (((screen)->colorULMode && ((flags) & UNDERLINE)) \
-	    ? COLOR_UL \
-	    : (((screen)->colorBDMode && ((flags) & BOLD)) \
-	       ? COLOR_BD \
+	 : (((screen)->colorBDMode && ((flags) & BOLD)) \
+	    ? COLOR_BD \
+	    : (((screen)->colorULMode && ((flags) & UNDERLINE)) \
+	       ? COLOR_UL \
 	       : fg)))
 
 #define checkVeryBoldAttr(flags, fg, code, attr) \
@@ -1347,5 +1410,6 @@ unsigned visual_width(IChar * /* str */, Cardinal  /* len */);
 #ifdef __cplusplus
 	}
 #endif
+/* *INDENT-ON* */
 
-#endif	/* included_xterm_h */
+#endif /* included_xterm_h */

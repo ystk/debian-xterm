@@ -20,12 +20,12 @@ else
 	confflags += --build $(DEB_BUILD_GNU_TYPE) --host $(DEB_HOST_GNU_TYPE)
 endif
 
-CFLAGS = -g -Wall
-ifneq (,$(filter noopt,$(DEB_BUILD_OPTIONS)))
-	CFLAGS += -O0
-else
-	CFLAGS += -O2
-endif
+CFLAGS = $(shell dpkg-buildflags --get CFLAGS)
+CFLAGS += -Wall
+
+LDFLAGS = $(shell dpkg-buildflags --get LDFLAGS)
+CPPFLAGS = $(shell dpkg-buildflags --get CPPFLAGS)
+
 ifneq (,$(filter parallel=%,$(DEB_BUILD_OPTIONS)))
 	NUMJOBS = $(patsubst parallel=%,%,$(filter parallel=%,$(DEB_BUILD_OPTIONS)))
 	MAKEFLAGS += -j$(NUMJOBS)
@@ -37,7 +37,7 @@ DESKTOP_FLAGS = --vendor debian \
 		--dir=$(DEBTREEDIR)/usr/share/applications
 
 # disable some unsafe operations
-CFLAGS += \
+CPPFLAGS += \
 	-DDEF_ALLOW_FONT=False \
 	-DDEF_ALLOW_TCAP=False \
 	-DDEF_DISALLOWED_WINDOW=\\\"1,2,3,4,5,6,7,8,9,11,13,14,18,19,20,21,GetSelection,SetSelection,SetWinLines,SetXprop\\\"
@@ -66,24 +66,25 @@ $(STAMP_DIR)/configure: $(STAMP_DIR)/patch
 		$(confflags) \
 		DESKTOP_FLAGS="$(DESKTOP_FLAGS)" \
 		CFLAGS="$(CFLAGS)" \
+		CPPFLAGS="$(CPPFLAGS)" \
+		LDFLAGS="$(LDFLAGS)" \
 		LUIT=/usr/bin/luit
-	touch $@
+	>$@
 
 
 .PHONY: build
 build: $(STAMP_DIR)/build
-$(STAMP_DIR)/build: $(STAMP_DIR)/configure debian/local/xterm.faq.gz
+$(STAMP_DIR)/build: $(STAMP_DIR)/configure debian/local/xterm.faq
 	dh_testdir
 	cd build && $(MAKE)
-	touch $@
+	>$@
 
 .PHONY: clean
 clean: xsfclean
 	dh_testdir
-	dh_testroot
 	rm -rf $(STAMP_DIR)
 	rm -rf build
-	dh_clean debian/local/xterm.faq.gz
+	dh_clean debian/local/xterm.faq
 
 .PHONY: install
 install: build
@@ -93,7 +94,7 @@ install: build
 	dh_installdirs
 	# General installation
 	cd build && \
-	$(MAKE) install mandir=/usr/share/man/man1 libdir=/etc DESTDIR=$(DEBTREEDIR)
+	$(MAKE) install install-desktop mandir=/usr/share/man/man1 libdir=/etc DESTDIR=$(DEBTREEDIR)
 	
 	## Install lxterm command and manual page.
 	install -m 755 debian/local/lxterm $(DEBTREEDIR)/usr/bin
@@ -108,11 +109,8 @@ install: build
 	dh_install --sourcedir=debian/tmp --list-missing
 
 # Generate plain text XTerm FAQ from HTML.
-debian/local/xterm.faq.gz: debian/local/xterm.faq.html
+debian/local/xterm.faq: debian/local/xterm.faq.html
 	$(HTML2TEXT) $< >debian/local/xterm.faq
-	# dh_compress doesn't recognize this file extension, so we must
-	# compress it manually.
-	gzip -9f debian/local/xterm.faq
 
 .PHONY: binary
 binary: binary-arch

@@ -1,3 +1,170 @@
+xterm (308-1) unstable; urgency=medium
+
+  * New upstream release.
+    - Correct font used for clipping double-width bitmap fonts from
+      xterm 307 changes to work around mis-scaled fonts (Closes: #752047).
+
+ -- Sven Joachim <svenjoac@gmx.de>  Sat, 21 Jun 2014 09:44:01 +0200
+
+xterm (307-1) unstable; urgency=medium
+
+  * New upstream release.
+    - Amend fix for Freedesktop bug #15979 (Closes: #750733).
+    - Amend resets for keyboard-type, pointer-mode and title-modes
+      from xterm 305 changes to account for resource settings
+      (Closes: #751351).
+
+ -- Sven Joachim <svenjoac@gmx.de>  Wed, 18 Jun 2014 19:49:57 +0200
+
+xterm (306-1) unstable; urgency=medium
+
+  [ Julien Cristau ]
+  * New upstream release.
+  * Remove Cyril from Uploaders.
+
+  [ Sven Joachim ]
+  * New upstream release.
+  * Update copy of XTerm FAQ to revision 1.282 (dated 2014/05/25).
+
+ -- Sven Joachim <svenjoac@gmx.de>  Thu, 05 Jun 2014 17:50:00 +0200
+
+xterm (304-1) unstable; urgency=low
+
+  * New upstream release.
+
+ -- Sven Joachim <svenjoac@gmx.de>  Wed, 07 May 2014 16:50:50 +0200
+
+xterm (303-1) unstable; urgency=low
+
+  * New upstream release.
+    - Fix a regression in xterm 302 relating to interaction of SHELL
+      and XTERM_SHELL variables (Closes: #740919).
+
+ -- Sven Joachim <svenjoac@gmx.de>  Fri, 07 Mar 2014 18:23:50 +0100
+
+xterm (302-1) unstable; urgency=low
+
+  * New upstream release.
+  * Update copy of XTerm FAQ to revision 1.278 (dated 2014/02/24)
+    (Closes: #737692).
+  * Check GPG signature of upstream tarballs in the watch file.
+
+ -- Sven Joachim <svenjoac@gmx.de>  Tue, 04 Mar 2014 19:55:16 +0100
+
+xterm (301-1) unstable; urgency=low
+
+  * New upstream release.
+    - Improve manpage description of scrollbar translations versus
+      the vt100 translations (Closes: #723573).
+  * Build-depend on autotools-dev to update config.{guess,sub}.
+  * Bump Standards-Version to 3.9.5, no changes needed.
+
+ -- Sven Joachim <svenjoac@gmx.de>  Wed, 22 Jan 2014 18:22:12 +0100
+
+xterm (300-1) unstable; urgency=low
+
+  * New upstream release.
+    - Avoid infinite recursion and stack overflow in libxcursor
+      (Closes: #731269).
+
+ -- Sven Joachim <svenjoac@gmx.de>  Wed, 04 Dec 2013 18:05:01 +0100
+
+xterm (299-1) unstable; urgency=low
+
+  * New upstream release.
+  * Add libxcursor-dev to Build-Depends (Closes: #466704).
+
+ -- Sven Joachim <svenjoac@gmx.de>  Mon, 02 Dec 2013 18:58:17 +0100
+
+xterm (298-1) unstable; urgency=low
+
+  * New upstream release.
+    - Change default for assumeAllChars resource (Closes: #725682).
+    - Amend change from xterm 297 for ASCII-equivalents to ensure that
+      missing characters which happen to be double-width are padded to
+      the expected number of columns. Also, correct the choice between
+      normal/wide Xft fonts used when checking for missing characters
+      (Closes: #728949).
+    - work around Xcursor library to make pointerColor resource work as
+      documented (Closes: #466704).
+  * Update copy of XTerm FAQ to revision 1.259 (dated 2013/11/25).
+  * Add a debian/rules target to download that FAQ from
+    http://invisible-island.net.
+
+ -- Sven Joachim <svenjoac@gmx.de>  Sun, 01 Dec 2013 09:18:00 +0100
+
+xterm (297-1) unstable; urgency=low
+
+  * New upstream release.
+  * Enable sixel graphics (Closes: #716660).
+
+ -- Sven Joachim <svenjoac@gmx.de>  Sun, 15 Sep 2013 15:52:21 +0200
+
+xterm (295-1) unstable; urgency=low
+
+  * New upstream release.
+    - Amend fix from xterm 292 by removing now-unneeded chunk which
+      introduced problem in selection (Closes: #714527).
+  * Update debian/copyright.
+  * Switch Vcs-* fields to anonscm.debian.org.
+  * Update copy of XTerm FAQ to revision 1.243 (dated 2013/07/05).
+
+ -- Sven Joachim <svenjoac@gmx.de>  Sun, 07 Jul 2013 17:30:07 +0200
+
+xterm (293-1) unstable; urgency=low
+
+  * New upstream release.
+    - Improve description of initialFont, set-vt-font and set-tex-text
+      in manpage (Closes: #707899).
+  * Update copyright year in debian/copyright.
+
+ -- Sven Joachim <svenjoac@gmx.de>  Wed, 29 May 2013 17:19:26 +0200
+
+xterm (292-1) unstable; urgency=low
+
+  * New upstream release.
+  * Refresh 904_fontops.diff.
+  * Update copy of XTerm FAQ to revision 1.229 (dated 2013/05/18).
+  * Bump debhelper compatibility level to 9.
+  * Use dh_install's --fail-missing option.
+  * Convert debian/rules to dh and drop xsfbs.
+  * Bump Standards-Version to 3.9.4, no changes needed.
+  * Add myself to Uploaders.
+
+ -- Sven Joachim <svenjoac@gmx.de>  Sun, 26 May 2013 11:22:26 +0200
+
+xterm (290-1) experimental; urgency=low
+
+  * New upstream release
+  * Drop 100_manpage_whatis.diff, no longer necessary.
+  * Drop explicit --with-desktop-category, no longer necessary.
+  * Update copy of XTerm FAQ to revision 1.221 (dated 2013/01/26).
+
+ -- Julien Cristau <jcristau@debian.org>  Sat, 23 Feb 2013 16:09:09 +0100
+
+xterm (287-1) experimental; urgency=low
+
+  * New upstream release (closes: #694375)
+    - add alternateScroll resource and corresponding control sequences which
+      modify the scroll-forw and scroll-back actions: when the alternate
+      screen is displayed, wheel mouse up/down will send cursor keys (closes:
+      #683942)
+    - improve rendering for the case when a Unicode character is absent in the
+      bold font but present in the normal font by temporarily falling back to
+      the normal font (closes: #359006, #408666)
+    - check for misconfigured printerCommand resource on the first use, warn
+      and disable it if it does not specify an executable command (closes:
+      #691642)
+  * Drop upstream patches.
+  * Refresh remaining patches.
+  * Explicitly set --with-desktop-category to avoid desktop-file-install
+    failure.
+  * Enable backarrowKeyIsErase in configure instead of 900_debian_xterm.diff.
+  * Install png/svg icons.
+  * Change xterm.man's NAME section to keep whatis(1) happy.
+
+ -- Julien Cristau <jcristau@debian.org>  Tue, 27 Nov 2012 22:27:28 +0100
+
 xterm (278-4) unstable; urgency=low
 
   * Update copy of XTerm FAQ to revision 1.199 (dated 2012/11/11).

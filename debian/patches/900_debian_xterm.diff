@@ -12,8 +12,7 @@ Make Debian-specific tweaks to xterm:
   depth available, set the menu colors to gray15 on antique white, and
   customize the appearance VT widget's scrollbar.  Otherwise, do not eat up
   precious entries in the color palette.
-* Set the "backarrowKeyIsErase" and "ptyInitialErase" parameters to true by
-  default.
+* Set the "ptyInitialErase" parameter to true by default.
 * Define the "xterm-debian" terminal type in the termcap and terminfo
   files; it is based on "xterm-new" with the exception that the backspace
   is VT220-conformant, as directed by section 9.8 of the Debian Policy
@@ -38,7 +37,7 @@ Index: xterm/terminfo
 ===================================================================
 --- xterm.orig/terminfo
 +++ xterm/terminfo
-@@ -139,6 +139,8 @@ xterm-new|modern xterm terminal emulator
+@@ -137,6 +137,8 @@ xterm-new|modern xterm terminal emulator
  	use=xterm+pcfkeys,
  	use=xterm+tmux,
  	use=xterm-basic,
@@ -47,7 +46,7 @@ Index: xterm/terminfo
  #
  # Encode modifiers using parameters (see "Xterm Control Sequences" ctlseqs.ms).
  # Note that this is unrelated to PCTERM.
-@@ -1963,11 +1965,13 @@ xterm-r5|xterm R5 version,
+@@ -1967,11 +1969,13 @@ xterm-r5|xterm R5 version,
  # This is the only entry which you should have to customize, since "xterm"
  # is widely used for a variety of incompatible terminal emulations including
  # color_xterm and rxvt.
@@ -67,12 +66,11 @@ Index: xterm/XTerm.ad
 ===================================================================
 --- xterm.orig/XTerm.ad
 +++ xterm/XTerm.ad
-@@ -159,6 +159,10 @@
+@@ -159,6 +159,9 @@
  *tek4014*font3: 6x13
  *tek4014*fontSmall: 6x10
  
 +! Debian package customizations follow.
-+*backarrowKeyIsErase: true
 +*ptyInitialErase: true
 +
  ! If xterm is built with a toolbar, the widget hierarchy looks like this,

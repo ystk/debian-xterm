@@ -1,7 +1,7 @@
-/* $XTermId: data.h,v 1.119 2011/07/12 08:37:24 tom Exp $ */
+/* $XTermId: data.h,v 1.124 2014/03/02 12:01:26 tom Exp $ */
 
 /*
- * Copyright 2002-2009,2011 by Thomas E. Dickey
+ * Copyright 2002-2013,2014 by Thomas E. Dickey
  *
  *                         All Rights Reserved
  *
@@ -141,9 +141,14 @@ extern Atom wm_delete_window;
 extern int mapstate;
 #endif /* HANDLE_STRUCT_NOTIFY */
 
+#ifdef HAVE_LIB_XCURSOR
+extern char *xterm_cursor_theme;
+#endif
+
 typedef struct XTERM_RESOURCE {
     char *icon_geometry;
     char *title;
+    char *icon_hint;
     char *icon_name;
     char *term_name;
     char *tty_modes;
@@ -192,12 +197,19 @@ typedef struct XTERM_RESOURCE {
     Boolean useInsertMode;
 #if OPT_ZICONBEEP
     int zIconBeep;		/* beep level when output while iconified */
+    char *zIconFormat;		/* format for icon name */
 #endif
 #if OPT_PTY_HANDSHAKE
     Boolean wait_for_map;
     Boolean wait_for_map0;	/* ...initial value of .wait_for_map */
     Boolean ptyHandshake;	/* use pty-handshaking */
     Boolean ptySttySize;	/* reset TTY size after pty handshake */
+#endif
+#if OPT_REPORT_COLORS
+    Boolean reportColors;	/* show color information as allocated */
+#endif
+#if OPT_REPORT_FONTS
+    Boolean reportFonts;	/* show bitmap-font information as loaded */
 #endif
 #if OPT_SAME_NAME
     Boolean sameName;		/* Don't change the title or icon name if it is

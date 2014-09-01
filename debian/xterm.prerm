@@ -7,11 +7,6 @@
 
 set -e
 
-THIS_PACKAGE=xterm
-THIS_SCRIPT=prerm
-
-#INCLUDE_SHELL_LIB#
-
 if [ "$1" = "remove" ] || [ "$1" = "deconfigure" ]; then
     update-alternatives --remove x-terminal-emulator /usr/bin/koi8rxterm
     update-alternatives --remove x-terminal-emulator /usr/bin/uxterm

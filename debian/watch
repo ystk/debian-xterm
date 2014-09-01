@@ -1,2 +1,2 @@
 version=3
-opts=pasv ftp://invisible-island.net/xterm/ xterm-(.*).tgz
+opts=pasv,pgpsigurlmangle=s/$/.asc/ ftp://invisible-island.net/xterm/ xterm-(.*).tgz

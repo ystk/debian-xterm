@@ -58,6 +58,7 @@ configure-stamp:
 		--libdir=/etc/$(PACKAGE) \
 		--with-app-class=$(PKG_CLASS) \
 		--without-xterm-symlink \
+		--disable-imake \
 		--enable-256-color \
 		--enable-88-color \
 		--enable-dabbrev \
@@ -71,17 +72,21 @@ configure-stamp:
 		--enable-paste64 \
 		--enable-rectangles \
 		--enable-sco-fkeys \
+		--enable-sixel-graphics \
 		--enable-tcap-fkeys \
 		--enable-tcap-query \
 		--enable-toolbar \
 		--enable-wide-chars \
 		--enable-xmc-glitch \
 		--with-app-defaults=$(PKG_APPDEFAULTS) \
-		--with-icondir=\$${prefix}/share/pixmaps \
+		--with-icondir=\$${prefix}/share/icons \
+		--with-pixmapdir=\$${prefix}/share/pixmaps \
 		--with-own-terminfo=\$${prefix}/share/terminfo \
+		--with-icon-theme \
 		--with-terminal-type=xterm-new \
 		--with-utempter \
-		${DEBOP}
+		--with-icon-name=mini.xterm \
+		--with-xpm ${DEBOP}
 
 	touch configure-stamp
 
@@ -161,6 +166,8 @@ binary-indep: build install
 		done' ; \
 	  exit 0 )
 
+	dh_icons
+
 # Build architecture-dependent files here.
 binary-arch: build install
 	dh_testdir
@@ -174,7 +181,7 @@ binary-arch: build install
 	dh_install
 	dh_link
 	dh_strip
-	dh_compress
+	dh_compress -Xexamples
 	dh_fixperms
 	dh_installdeb
 	dh_shlibdeps

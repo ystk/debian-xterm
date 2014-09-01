@@ -2,10 +2,10 @@ Source: xterm
 Section: x11
 Priority: optional
 Maintainer: Debian X Strike Force <debian-x@lists.debian.org>
-Uploaders: Cyril Brulebois <kibi@debian.org>
-Standards-Version: 3.9.2
-Vcs-Browser: http://git.debian.org/?p=pkg-xorg/app/xterm.git
-Vcs-Git: git://git.debian.org/git/pkg-xorg/app/xterm
+Uploaders: Sven Joachim <svenjoac@gmx.de>
+Standards-Version: 3.9.5
+Vcs-Browser: http://anonscm.debian.org/gitweb/?p=pkg-xorg/app/xterm.git
+Vcs-Git: git://anonscm.debian.org/pkg-xorg/app/xterm
 Homepage: http://invisible-island.net/xterm/xterm.html
 Build-Depends:
  libncurses5-dev | libncurses-dev,
@@ -13,8 +13,10 @@ Build-Depends:
  libxaw7-dev,
  libxkbfile-dev,
  libutempter-dev,
- debhelper (>= 5),
+ libxcursor-dev,
+ debhelper (>= 9),
  quilt,
+ autotools-dev,
  lynx-cur | lynx,
  xorg-docs-core,
  desktop-file-utils,
@@ -96,10 +98,13 @@ Build-Depends:
 #       data.h:#include <X11/extensions/XKBbells.h>
 #   libutempter-dev
 #       main.c:#include <utempter.h>
+#   libxcursor-dev
+#       misc.c:#ifdev HAVE_LIB_XCURSOR
 #   xorg-docs-core                  provides X(7) which minstall.sh tries to
 #                                   detect
-#   debhelper (>= 5)                debian/compat = 5
+#   debhelper (>= 9)                debian/compat = 9
 #   quilt                           patch management system
+#   autotools-dev                   update config.guess, config.sub
 #   lynx-cur | lynx                 generates plain-text version of xterm faq
 #   desktop-file-utils              for installing xterm.desktop
 

@@ -1,7 +1,7 @@
-/* $XTermId: scrollback.c,v 1.15 2011/09/11 14:59:40 tom Exp $ */
+/* $XTermId: scrollback.c,v 1.17 2014/05/11 14:08:11 tom Exp $ */
 
 /*
- * Copyright 2009-2010,2011 by Thomas E. Dickey
+ * Copyright 2009-2013,2014 by Thomas E. Dickey
  *
  *                         All Rights Reserved
  *
@@ -32,7 +32,7 @@
 
 #include <xterm.h>
 
-#define REAL_ROW(screen, row) ((row) + 1 + (screen)->saved_fifo)
+#define REAL_ROW(screen, row) ((row) + (screen)->saved_fifo)
 #define ROW2FIFO(screen, row) \
 	(unsigned) (REAL_ROW(screen, row) % (screen)->savelines)
 
@@ -42,7 +42,7 @@
  * So we just count backwards from the last saved line.
  */
 LineData *
-getScrollback(TScreen * screen, int row)
+getScrollback(TScreen *screen, int row)
 {
     LineData *result = 0;
 
@@ -62,7 +62,7 @@ getScrollback(TScreen * screen, int row)
  * Allocate a new row in the scrollback FIFO, returning a pointer to it.
  */
 LineData *
-addScrollback(TScreen * screen)
+addScrollback(TScreen *screen)
 {
     ScrnBuf where = 0;
     unsigned which;
@@ -70,7 +70,6 @@ addScrollback(TScreen * screen)
     Char *block;
 
     if (screen->saveBuf_index != 0) {
-	screen->saved_fifo++;
 	TRACE(("addScrollback %lu\n", screen->saved_fifo));
 
 	/* first, see which index we'll use */
@@ -86,9 +85,12 @@ addScrollback(TScreen * screen)
 	     */
 	    if (prior->attribs != 0) {
 		TRACE(("...freeing prior FIFO data in slot %d: %p->%p\n",
-		       which, (void *) prior, prior->attribs));
+		       which, (void *) prior, (void *) prior->attribs));
 		free(prior->attribs);
 		prior->attribs = 0;
+	    }
+	    if (screen->saved_fifo > 2 * screen->savelines) {
+		screen->saved_fifo -= screen->savelines;
 	    }
 	}
 
@@ -101,14 +103,15 @@ addScrollback(TScreen * screen)
 	TRACE(("...storing new FIFO data in slot %d: %p->%p\n",
 	       which, (void *) where, block));
 
+	screen->saved_fifo++;
     }
     return (LineData *) where;
 }
 
 void
-deleteScrollback(TScreen * screen, int row)
+deleteScrollback(TScreen *screen)
 {
-    unsigned which = ROW2FIFO(screen, row);
+    unsigned which = ROW2FIFO(screen, -1);
     ScrnBuf where = scrnHeadAddr(screen, screen->saveBuf_index, which);
     LineData *prior = (LineData *) where;
     /*
@@ -117,8 +120,9 @@ deleteScrollback(TScreen * screen, int row)
      */
     if (prior->attribs != 0) {
 	TRACE(("...freeing prior FIFO data in slot %d: %p->%p\n",
-	       which, (void *) prior, prior->attribs));
+	       which, (void *) prior, (void *) prior->attribs));
 	free(prior->attribs);
 	prior->attribs = 0;
     }
+    screen->saved_fifo--;
 }

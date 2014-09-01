@@ -2,7 +2,7 @@ Index: xterm/xterm.man
 ===================================================================
 --- xterm.orig/xterm.man
 +++ xterm/xterm.man
-@@ -2273,8 +2273,9 @@ This is a comma-separated list of names,
+@@ -2416,8 +2416,9 @@ This is a comma-separated list of names,
  from \fIdtterm\fP the operation number).
  The default value is
  .RS
@@ -12,4 +12,4 @@ Index: xterm/xterm.man
 +(i.e. no operations are allowed).
  .IP
  The names are listed below.
- \fIxterm\fP ignores capitalization, but
+ \fI\*n\fP ignores capitalization, but

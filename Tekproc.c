@@ -1,7 +1,7 @@
-/* $XTermId: Tekproc.c,v 1.191 2011/12/27 10:19:51 tom Exp $ */
+/* $XTermId: Tekproc.c,v 1.196 2014/04/12 00:55:22 tom Exp $ */
 
 /*
- * Copyright 2001-2010,2011 by Thomas E. Dickey
+ * Copyright 2001-2012,2014 by Thomas E. Dickey
  *
  *                         All Rights Reserved
  *
@@ -144,7 +144,7 @@
 #define	input()		Tinput(tw)
 #define	unput(c)	*Tpushback++ = (Char) c
 /* *INDENT-OFF* */
-static struct Tek_Char {
+static const struct Tek_Char {
     int hsize;			/* in Tek units */
     int vsize;			/* in Tek units */
     int charsperline;
@@ -187,8 +187,8 @@ static char defaultTranslations[] = "\
                 ~Meta<Btn3Down>: gin-press(r)";
 /* *INDENT-OFF* */
 static XtActionsRec actionsList[] = {
-    { "string",	HandleStringEvent },
-    { "insert",	HandleKeyPressed },	/* alias for insert-seven-bit */
+    { "string",			HandleStringEvent },
+    { "insert",			HandleKeyPressed },	/* alias for insert-seven-bit */
     { "insert-seven-bit",	HandleKeyPressed },
     { "insert-eight-bit",	HandleEightBitKeyPressed },
     { "gin-press",		HandleGINInput },
@@ -889,6 +889,9 @@ TekClear(TekWidget tw)
 {
     TekScreen *tekscr = TekScreenOf(tw);
 
+    TRACE(("TekClear\n"));
+    nplot = 0;
+    line_pt = Tline;
     if (TWindow(tekscr))
 	XClearWindow(XtDisplay(tw), TWindow(tekscr));
 }
@@ -905,6 +908,7 @@ TekConfigure(Widget w)
 	int border = 2 * screen->border;
 	double d;
 
+	TRACE(("TekConfigure\n"));
 	TekClear(tw);
 	TWidth(tekscr) = w->core.width - border;
 	THeight(tekscr) = w->core.height - border;
@@ -993,6 +997,7 @@ TekPage(TekWidget tw)
     TekScreen *tekscr = TekScreenOf(tw);
     TekLink *tek;
 
+    TRACE(("TekPage\n"));
     TekClear(tw);
     tekscr->cur_X = 0;
     tekscr->cur_Y = TEKHOME;
@@ -1075,7 +1080,7 @@ static void
 TCursorBack(TekWidget tw)
 {
     TekScreen *tekscr = TekScreenOf(tw);
-    struct Tek_Char *t;
+    const struct Tek_Char *t;
     int x, l;
 
     x = (tekscr->cur_X -=
@@ -1098,7 +1103,7 @@ static void
 TCursorForward(TekWidget tw)
 {
     TekScreen *tekscr = TekScreenOf(tw);
-    struct Tek_Char *t;
+    const struct Tek_Char *t;
     int l;
 
     if ((tekscr->cur_X +=
@@ -1118,7 +1123,7 @@ static void
 TCursorUp(TekWidget tw)
 {
     TekScreen *tekscr = TekScreenOf(tw);
-    struct Tek_Char *t;
+    const struct Tek_Char *t;
     int l;
 
     t = &TekChar[tekscr->cur.fontsize];
@@ -1138,7 +1143,7 @@ static void
 TCursorDown(TekWidget tw)
 {
     TekScreen *tekscr = TekScreenOf(tw);
-    struct Tek_Char *t;
+    const struct Tek_Char *t;
     int l;
 
     t = &TekChar[tekscr->cur.fontsize];
@@ -1329,7 +1334,7 @@ TekRun(void)
 #define SHORT_DASHED_LENGTH 2
 #define LONG_DASHED_LENGTH 2
 
-static int dash_length[TEKNUMLINES] =
+static const int dash_length[TEKNUMLINES] =
 {
     DOTTED_LENGTH,
     DOT_DASHED_LENGTH,
@@ -1337,16 +1342,16 @@ static int dash_length[TEKNUMLINES] =
     LONG_DASHED_LENGTH,
 };
 
-static unsigned char dotted[DOTTED_LENGTH] =
+static _Xconst char dotted[DOTTED_LENGTH] =
 {3, 1};
-static unsigned char dot_dashed[DOT_DASHED_LENGTH] =
+static _Xconst char dot_dashed[DOT_DASHED_LENGTH] =
 {3, 4, 3, 1};
-static unsigned char short_dashed[SHORT_DASHED_LENGTH] =
+static _Xconst char short_dashed[SHORT_DASHED_LENGTH] =
 {4, 4};
-static unsigned char long_dashed[LONG_DASHED_LENGTH] =
+static _Xconst char long_dashed[LONG_DASHED_LENGTH] =
 {4, 7};
 
-static unsigned char *dashes[TEKNUMLINES] =
+static _Xconst char *dashes[TEKNUMLINES] =
 {
     dotted,
     dot_dashed,
@@ -1603,7 +1608,7 @@ TekRealize(Widget gw,
 	tekscr->linepat[i] = XCreateGC(XtDisplay(tw), TWindow(tekscr),
 				       (GCForeground | GCLineStyle), &gcv);
 	XSetDashes(XtDisplay(tw), tekscr->linepat[i], 0,
-		   (char *) dashes[i], dash_length[i]);
+		   dashes[i], dash_length[i]);
     }
 
     TekBackground(tw, screen);
@@ -1723,7 +1728,7 @@ TekSetFontSize(TekWidget tw, Bool fromMenu, int newitem)
 }
 
 void
-ChangeTekColors(TekWidget tw, TScreen * screen, ScrnColors * pNew)
+ChangeTekColors(TekWidget tw, TScreen *screen, ScrnColors * pNew)
 {
     TekScreen *tekscr = TekScreenOf(tw);
     int i;
@@ -1812,7 +1817,7 @@ TekReverseVideo(TekWidget tw)
 }
 
 static void
-TekBackground(TekWidget tw, TScreen * screen)
+TekBackground(TekWidget tw, TScreen *screen)
 {
     TekScreen *tekscr = TekScreenOf(tw);
 
@@ -1932,7 +1937,7 @@ TekCopy(TekWidget tw)
 void
 HandleGINInput(Widget w,
 	       XEvent * event GCC_UNUSED,
-	       String * param_list,
+	       String *param_list,
 	       Cardinal *nparamsp)
 {
     XtermWidget xw = term;

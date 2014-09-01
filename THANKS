@@ -1,4 +1,4 @@
--- $XTermId: THANKS,v 1.5 2011/08/21 00:52:56 tom Exp $
+-- $XTermId: THANKS,v 1.12 2014/03/03 19:31:41 tom Exp $
 -- vile:txtmode fk=8bit
 There's no AUTHORS file in this distribution; it would be redundant since
 I (Thomas E. Dickey) have done more than 80% of the work on xterm since 1996.
@@ -12,6 +12,8 @@ Here's a list from xterm.log.html of people who have contributed changes.
 
 Adam M Costello
 Adam Sulmicki
+Ailin Nemui
+Al Poole
 Alan Coopersmith
 Alex Hornung
 Alexander Pohoyda
@@ -19,12 +21,17 @@ Alexander V Lukyanov
 Andrea Odetti
 Andreas Jaeger
 Andreas Schwab
+Andres Perera
 Andrew Sumner
 Andrew Tipton
+Andrey Panov
+Andries E Brouwer
 Anton Kovalenko
+Balazs Kezes
 Ben Yoshino
 Bernhard R Link
 Bernhard Rosenkraenzer
+Bertram Felgenhauer
 Bill Nottingham
 Bob Maynard
 Bradd W Szonye
@@ -39,6 +46,7 @@ Christian Weisgerber
 Chuck Blake
 D Roland Walker
 Daniel Colascione
+Daniel Drake
 Daniel Jacobowitz
 Dave Simmons
 David Dawes
@@ -46,6 +54,7 @@ David Krause
 David Madore
 David Martínez Moreno
 David Mathog
+David Wolfskill
 David Wood
 David Yeo
 Denis Zaitsev
@@ -57,6 +66,7 @@ Ed Schouten
 Eddy De Greef
 Edward S Arthur
 Egbert Eich
+Egmont Koblinger
 Emanuele Giaquinta
 Eugene Konev
 Fabrice Bellard
@@ -73,6 +83,7 @@ H Merijn Brand
 Hasso Tepper
 Holger Veit
 Ilya Zakharevich
+Iwamoto Kouichi
 James Armstrong
 Jason Bacon
 Jason Vas Dias
@@ -96,6 +107,7 @@ Kean Johnston
 Keith Packard
 Ken Martin
 Kevin Buhr
+Kevin Ryde
 Kevin Schoedel
 Kiyokazu Suto
 Larry Riedel
@@ -126,21 +138,27 @@ Nelson Beebe
 Németh Márton
 Nicolas George
 Ovidiu Gheorghioiu
+Paul Bolle
 Paul Gilmartin
 Paul Giordano
 Paul Lampert
+Paul Maier
 Paul Vojta
 Paul Williams
 Pavel Roskin
+Peder Stray
 Per Hedeland
 Peter Berg Larsen
 Pierre Lombard
 Richard Braakman
 Richard Griswold
+Richard Tollerton
 Rob Braun
 Robert Brady
 Robert Earl
 Robin Cutshaw
+Romain Francois
+Ross Combs
 Ross Paterson
 Ryan Johnson
 Scott Sewall
@@ -152,6 +170,7 @@ Stefan Dirsch
 Steve Wall
 Stuart Lissaman
 Sven Verdoolaege
+Taketo Kabe
 Taneli Huuskonen
 Ted Phelps
 Thierry Reding
@@ -159,6 +178,7 @@ Thomas Wolff
 Tim Adye
 Tim Pope
 Tobias Stoeckmann
+Todd Eigenschink
 Todd Larason
 Todd Miller
 Tomas Vanhala
@@ -167,6 +187,7 @@ Tomohiro Kubota
 Tor Lillqvist
 Torrey Lyons
 Victor Stinner
+Vincent Lefevre
 Werner Lemberg
 Will Day
 Zdenek Sekera

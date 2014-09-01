@@ -1,7 +1,7 @@
-/* $XTermId: version.h,v 1.337 2012/01/12 12:45:36 tom Exp $ */
+/* $XTermId: version.h,v 1.391 2014/06/19 19:58:13 tom Exp $ */
 
 /*
- * Copyright 1998-2010,2011 by Thomas E. Dickey
+ * Copyright 1998-2013,2014 by Thomas E. Dickey
  *
  *                         All Rights Reserved
  *
@@ -30,14 +30,21 @@
  * authorization.
  */
 
+#ifndef included_version_h
+#define included_version_h
 /*
  * These definitions are used to build the string that's printed in response to
  * "xterm -version", or embedded in "xterm -help".  It usually indicates the
- * version of X to which this version of xterm has been built.  The number in
- * parentheses is my patch number (Thomas E. Dickey).
+ * version of X to which this version of xterm has been built.  The resulting
+ * number in parentheses is my patch number (Thomas E. Dickey).
  */
-#define XTERM_PATCH   278
+#define XTERM_PATCH   308
+#define XTERM_DATE    2014-06-19
 
 #ifndef __vendorversion__
 #define __vendorversion__ "XTerm"
 #endif
+
+extern char *xtermVersion(void);
+
+#endif /* included_version_h */

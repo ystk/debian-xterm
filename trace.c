@@ -1,7 +1,7 @@
-/* $XTermId: trace.c,v 1.133 2011/12/27 10:10:53 tom Exp $ */
+/* $XTermId: trace.c,v 1.155 2014/04/25 21:30:23 Ross.Combs Exp $ */
 
 /*
- * Copyright 1997-2010,2011 by Thomas E. Dickey
+ * Copyright 1997-2013,2014 by Thomas E. Dickey
  *
  *                         All Rights Reserved
  *
@@ -35,6 +35,7 @@
  */
 
 #include <xterm.h>		/* for definition of GCC_UNUSED */
+#include <version.h>
 
 #if OPT_TRACE
 
@@ -45,6 +46,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <sys/types.h>
+#include <sys/stat.h>
 #include <stdio.h>
 #include <stdarg.h>
 #include <assert.h>
@@ -85,6 +87,7 @@ Trace(const char *fmt,...)
     trace_out = trace_who;
 
     if (!trace_fp) {
+	unsigned oldmask = (unsigned) umask(077);
 	char name[BUFSIZ];
 #if 0				/* usually I do not want unique names */
 	int unique;
@@ -102,6 +105,19 @@ Trace(const char *fmt,...)
 	sprintf(name, "Trace-%s.out", trace_who);
 #endif
 	trace_fp = fopen(name, "w");
+	/*
+	 * Try to put the trace-file in user's home-directory if the current
+	 * directory is not writable.
+	 */
+	if (trace_fp == 0) {
+	    char *home = getenv("HOME");
+	    if (home != 0) {
+		sprintf(name, "%.*s/Trace-%.8s.out",
+			(BUFSIZ - 21), home,
+			trace_who);
+		trace_fp = fopen(name, "w");
+	    }
+	}
 	if (trace_fp != 0) {
 	    fprintf(trace_fp, "%s\n", xtermVersion());
 	    TraceIds(NULL, 0);
@@ -110,6 +126,7 @@ Trace(const char *fmt,...)
 	    xtermWarning("Cannot open \"%s\"\n", name);
 	    exit(EXIT_FAILURE);
 	}
+	(void) umask(oldmask);
     }
 
     va_start(ap, fmt);
@@ -127,7 +144,6 @@ TraceClose(void)
 	(void) fflush(stderr);
 	(void) visibleChars(NULL, 0);
 	(void) visibleIChars(NULL, 0);
-	(void) visibleIChar(NULL, 0);
 	trace_fp = 0;
     }
 }
@@ -181,7 +197,7 @@ formatAscii(char *dst, unsigned value)
 	break;
     default:
 	if (E2A(value) < 32 || (E2A(value) >= 127 && E2A(value) < 160))
-	    sprintf(dst, "\\%03o", value);
+	    sprintf(dst, "\\%03o", value & 0xff);
 	else
 	    sprintf(dst, "%c", CharOf(value));
 	break;
@@ -191,7 +207,7 @@ formatAscii(char *dst, unsigned value)
 #if OPT_DEC_CHRSET
 
 const char *
-visibleChrsetName(unsigned chrset)
+visibleDblChrset(unsigned chrset)
 {
     const char *result = "?";
     switch (chrset) {
@@ -212,8 +228,58 @@ visibleChrsetName(unsigned chrset)
 }
 #endif
 
+const char *
+visibleScsCode(int chrset)
+{
+#define MAP(to,from) case from: result = to; break
+    const char *result = "<ERR>";
+    switch ((DECNRCM_codes) chrset) {
+	MAP("B", nrc_ASCII);
+	MAP("A", nrc_British);
+	MAP("A", nrc_British_Latin_1);
+	MAP("&4", nrc_Cyrillic);
+	MAP("0", nrc_DEC_Spec_Graphic);
+	MAP("1", nrc_DEC_Alt_Chars);
+	MAP("2", nrc_DEC_Alt_Graphics);
+	MAP("<", nrc_DEC_Supp);
+	MAP("%5", nrc_DEC_Supp_Graphic);
+	MAP(">", nrc_DEC_Technical);
+	MAP("4", nrc_Dutch);
+	MAP("5", nrc_Finnish);
+	MAP("C", nrc_Finnish2);
+	MAP("R", nrc_French);
+	MAP("f", nrc_French2);
+	MAP("Q", nrc_French_Canadian);
+	MAP("9", nrc_French_Canadian2);
+	MAP("K", nrc_German);
+	MAP("\"?", nrc_Greek);
+	MAP("F", nrc_Greek_Supp);
+	MAP("\"4", nrc_Hebrew);
+	MAP("%=", nrc_Hebrew2);
+	MAP("H", nrc_Hebrew_Supp);
+	MAP("Y", nrc_Italian);
+	MAP("M", nrc_Latin_5_Supp);
+	MAP("L", nrc_Latin_Cyrillic);
+	MAP("`", nrc_Norwegian_Danish);
+	MAP("E", nrc_Norwegian_Danish2);
+	MAP("6", nrc_Norwegian_Danish3);
+	MAP("%6", nrc_Portugese);
+	MAP("&5", nrc_Russian);
+	MAP("%3", nrc_SCS_NRCS);
+	MAP("Z", nrc_Spanish);
+	MAP("7", nrc_Swedish);
+	MAP("H", nrc_Swedish2);
+	MAP("=", nrc_Swiss);
+	MAP("%0", nrc_Turkish);
+	MAP("%2", nrc_Turkish2);
+	MAP("<UNK>", nrc_Unknown);
+    }
+#undef MAP
+    return result;
+}
+
 char *
-visibleChars(const Char * buf, unsigned len)
+visibleChars(const Char *buf, unsigned len)
 {
     static char *result;
     static unsigned used;
@@ -244,7 +310,7 @@ visibleChars(const Char * buf, unsigned len)
 }
 
 char *
-visibleIChars(IChar * buf, unsigned len)
+visibleIChars(IChar *buf, unsigned len)
 {
     static char *result;
     static unsigned used;
@@ -280,38 +346,11 @@ visibleIChars(IChar * buf, unsigned len)
 }
 
 char *
-visibleIChar(IChar * buf, unsigned len)
+visibleUChar(unsigned chr)
 {
-    static char *result;
-    static unsigned used;
-
-    if (buf != 0) {
-	unsigned limit = ((len + 1) * 8) + 1;
-	char *dst;
-
-	if (limit > used) {
-	    used = limit;
-	    result = XtRealloc(result, used);
-	}
-	if (result != 0) {
-	    dst = result;
-	    while (len--) {
-		unsigned value = *buf++;
-#if OPT_WIDE_CHARS
-		if (value > 255)
-		    sprintf(dst, "\\u+%04X", value);
-		else
-#endif
-		    formatAscii(dst, value);
-		dst += strlen(dst);
-	    }
-	}
-    } else if (result != 0) {
-	free(result);
-	result = 0;
-	used = 0;
-    }
-    return result;
+    IChar buf[1];
+    buf[0] = chr;
+    return visibleIChars(buf, 1);
 }
 
 #define CASETYPE(name) case name: result = #name; break
@@ -375,6 +414,19 @@ visibleEventType(int type)
 }
 
 const char *
+visibleNotifyMode(int code)
+{
+    const char *result = "?";
+    switch (code) {
+	CASETYPE(NotifyNormal);
+	CASETYPE(NotifyGrab);
+	CASETYPE(NotifyUngrab);
+	CASETYPE(NotifyWhileGrabbed);
+    }
+    return result;
+}
+
+const char *
 visibleNotifyDetail(int code)
 {
     const char *result = "?";
@@ -392,7 +444,7 @@ visibleNotifyDetail(int code)
 }
 
 const char *
-visibleSelectionTarget(Display * d, Atom a)
+visibleSelectionTarget(Display *d, Atom a)
 {
     const char *result = "?";
 
@@ -447,7 +499,7 @@ visibleXError(int code)
 #define isScrnFlag(flag) ((flag) == LINEWRAPPED)
 
 static char *
-ScrnText(LineData * ld)
+ScrnText(LineData *ld)
 {
     return visibleIChars(ld->charData, ld->lineSize);
 }
@@ -461,7 +513,7 @@ ScrnText(LineData * ld)
 	      ScrnText(ld))
 
 void
-LineClrFlag(LineData * ld, int flag)
+LineClrFlag(LineData *ld, int flag)
 {
     if (ld == 0) {
 	SHOW_BAD_LINE(LineClrFlag, ld);
@@ -474,7 +526,7 @@ LineClrFlag(LineData * ld, int flag)
 }
 
 void
-LineSetFlag(LineData * ld, int flag)
+LineSetFlag(LineData *ld, int flag)
 {
     if (ld == 0) {
 	SHOW_BAD_LINE(LineSetFlag, ld);
@@ -503,6 +555,77 @@ LineTstFlag(LineData ld, int flag)
 }
 #endif /* OPT_TRACE_FLAGS */
 
+/*
+ * Trace the normal or alternate screen, showing color values up to 16, e.g.,
+ * for debugging with vttest.
+ */
+void
+TraceScreen(XtermWidget xw, int whichBuf)
+{
+    TScreen *screen = TScreenOf(xw);
+    int row, col;
+
+    if (screen->editBuf_index[whichBuf]) {
+	TRACE(("TraceScreen %d:\n", whichBuf));
+	for (row = 0; row <= screen->max_row; ++row) {
+	    LineData *ld = getLineData(screen, row);
+	    TRACE((" %3d:", row));
+	    if (ld != 0) {
+		for (col = 0; col < ld->lineSize; ++col) {
+		    int ch = (int) ld->charData[col];
+		    if (ch < ' ')
+			ch = ' ';
+		    if (ch >= 127)
+			ch = '#';
+		    TRACE(("%c", ch));
+		}
+		TRACE((":\n"));
+
+		TRACE(("  xx:"));
+		for (col = 0; col < ld->lineSize; ++col) {
+		    unsigned attrs = ld->attribs[col];
+		    char ch;
+		    if (attrs & PROTECTED) {
+			ch = '*';
+		    } else if (attrs & BLINK) {
+			ch = 'B';
+		    } else if (attrs & CHARDRAWN) {
+			ch = '+';
+		    } else {
+			ch = ' ';
+		    }
+		    TRACE(("%c", ch));
+		}
+		TRACE((":\n"));
+
+#if 0
+		TRACE(("  fg:"));
+		for (col = 0; col < ld->lineSize; ++col) {
+		    unsigned fg = extract_fg(xw, ld->color[col], ld->attribs[col]);
+		    if (fg > 15)
+			fg = 15;
+		    TRACE(("%1x", fg));
+		}
+		TRACE((":\n"));
+
+		TRACE(("  bg:"));
+		for (col = 0; col < ld->lineSize; ++col) {
+		    unsigned bg = extract_bg(xw, ld->color[col], ld->attribs[col]);
+		    if (bg > 15)
+			bg = 15;
+		    TRACE(("%1x", bg));
+		}
+		TRACE((":\n"));
+#endif
+	    } else {
+		TRACE(("null lineData\n"));
+	    }
+	}
+    } else {
+	TRACE(("TraceScreen %d is nil\n", whichBuf));
+    }
+}
+
 void
 TraceFocus(Widget w, XEvent * ev)
 {
@@ -514,7 +637,7 @@ TraceFocus(Widget w, XEvent * ev)
 	{
 	    XFocusChangeEvent *event = (XFocusChangeEvent *) ev;
 	    TRACE(("\tdetail: %s\n", visibleNotifyDetail(event->detail)));
-	    TRACE(("\tmode:   %d\n", event->mode));
+	    TRACE(("\tmode:   %s\n", visibleNotifyMode(event->mode)));
 	    TRACE(("\twindow: %#lx\n", event->window));
 	}
 	break;
@@ -523,7 +646,7 @@ TraceFocus(Widget w, XEvent * ev)
 	{
 	    XCrossingEvent *event = (XCrossingEvent *) ev;
 	    TRACE(("\tdetail:    %s\n", visibleNotifyDetail(event->detail)));
-	    TRACE(("\tmode:      %d\n", event->mode));
+	    TRACE(("\tmode:      %s\n", visibleNotifyMode(event->mode)));
 	    TRACE(("\twindow:    %#lx\n", event->window));
 	    TRACE(("\tfocus:     %d\n", event->focus));
 	    TRACE(("\troot:      %#lx\n", event->root));
@@ -660,9 +783,32 @@ TraceWMSizeHints(XtermWidget xw)
  */
 /* ARGSUSED */
 static int
-no_error(Display * dpy GCC_UNUSED, XErrorEvent * event GCC_UNUSED)
+no_error(Display *dpy GCC_UNUSED, XErrorEvent * event GCC_UNUSED)
 {
     return 1;
+}
+
+const char *
+ModifierName(unsigned modifier)
+{
+    const char *s = "";
+    if (modifier & ShiftMask)
+	s = " Shift";
+    else if (modifier & LockMask)
+	s = " Lock";
+    else if (modifier & ControlMask)
+	s = " Control";
+    else if (modifier & Mod1Mask)
+	s = " Mod1";
+    else if (modifier & Mod2Mask)
+	s = " Mod2";
+    else if (modifier & Mod3Mask)
+	s = " Mod3";
+    else if (modifier & Mod4Mask)
+	s = " Mod4";
+    else if (modifier & Mod5Mask)
+	s = " Mod5";
+    return s;
 }
 
 void
@@ -696,8 +842,8 @@ XtGeometryResult
 TraceResizeRequest(const char *fn, int ln, Widget w,
 		   unsigned reqwide,
 		   unsigned reqhigh,
-		   Dimension * gotwide,
-		   Dimension * gothigh)
+		   Dimension *gotwide,
+		   Dimension *gothigh)
 {
     XtGeometryResult rc;
 
@@ -725,6 +871,7 @@ TraceXtermResources(void)
     Trace("XTERM_RESOURCE settings:\n");
     XRES_S(icon_geometry);
     XRES_S(title);
+    XRES_S(icon_hint);
     XRES_S(icon_name);
     XRES_S(term_name);
     XRES_S(tty_modes);
@@ -764,11 +911,18 @@ TraceXtermResources(void)
     XRES_B(useInsertMode);
 #if OPT_ZICONBEEP
     XRES_I(zIconBeep);
+    XRES_S(zIconFormat);
 #endif
 #if OPT_PTY_HANDSHAKE
     XRES_B(wait_for_map);
     XRES_B(ptyHandshake);
     XRES_B(ptySttySize);
+#endif
+#if OPT_REPORT_COLORS
+    XRES_B(reportColors);
+#endif
+#if OPT_REPORT_FONTS
+    XRES_B(reportFonts);
 #endif
 #if OPT_SAME_NAME
     XRES_B(sameName);

@@ -4,5 +4,3 @@ ctlseqs.txt
 xterm.log.html
 debian/local/xterm.faq.html
 debian/local/xterm.faq
-debian/tmp/usr/lib/xterm.termcap
-debian/tmp/usr/lib/xterm.terminfo

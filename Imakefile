@@ -1,4 +1,4 @@
-XCOMM $XTermId: Imakefile,v 1.105 2011/11/29 10:19:20 Thorsten.Glaser Exp $
+XCOMM $XTermId: Imakefile,v 1.110 2014/04/11 19:36:41 Ross.Combs Exp $
 XCOMM
 XCOMM                         Attention xterm porters
 XCOMM
@@ -126,19 +126,6 @@ module.o: ; $(CC) -c defines $(CFLAGS) module.c
   LOCAL_LDFLAGS = -Wl,-bind_at_load
 #endif
 
-#ifdef OS2Architecture
-/*
- * Only used in os2main.c, see ptyx.h for OPT_I18N_SUPPORT
- * <werner@suse.de>
- */
-#if XtermWithI18N
-        I18NDEF = -DI18N
-      FEATURE_DEFINES = -DDEBUG -DALLOWLOGGING $(I18NDEF)
-#else
-      FEATURE_DEFINES = -DDEBUG -DALLOWLOGGING
-#endif
-#endif
-
  OSMAJORVERSION = OSMajorVersion
  OSMINORVERSION = OSMinorVersion
 
@@ -178,6 +165,12 @@ TERMCAPDEFINES=-DUSE_TERMINFO -DHAVE_TIGETSTR
 #if !HasPutenv
       PUTENVDEF = -DNOPUTENV
 #endif
+#ifdef RegisXTerm
+       SIXELDEF = -DOPT_REGIS_GRAPHICS=1
+#endif
+#ifdef SixelXTerm
+       SIXELDEF = -DOPT_SIXEL_GRAPHICS=1
+#endif
 #ifdef TraceXTerm
        TRACEDEF = -DOPT_TRACE=1
 #endif
@@ -187,15 +180,18 @@ TERMCAPDEFINES=-DUSE_TERMINFO -DHAVE_TIGETSTR
    MISC_DEFINES = /* -DALLOWLOGGING -DALLOWLOGFILEEXEC */
     XKB_DEFINES = XkbClientDefines
    PATH_DEFINES = -DPROJECTROOT=$(PROJECTROOT)
-        DEFINES = $(XKB_DEFINES) $(TERMCAPDEFINES) $(FEATURE_DEFINES) $(SCROLLBAR_RIGHT) $(UTF8_OPTION) $(XRFDEF) $(PATH_DEFINES) $(PUTENVDEF) $(IMAKEDEFINES) $(TRACEDEF)
+        DEFINES = $(XKB_DEFINES) $(TERMCAPDEFINES) $(FEATURE_DEFINES) $(SCROLLBAR_RIGHT) $(UTF8_OPTION) $(XRFDEF) $(PATH_DEFINES) $(PUTENVDEF) $(IMAKEDEFINES) $(SIXELDEF) $(TRACEDEF)
        INCLUDES = -I. $(XRFINCLUDES)
 
-#ifdef OS2Architecture
-        MAINSRC = os2main.c
-        MAINOBJ = os2main.o
-#else
         MAINSRC = main.c
         MAINOBJ = main.o
+#ifdef RegisXTerm
+       SIXELSRC = graphics_regis.c
+       SIXELOBJ = graphics_regis.o
+#endif
+#ifdef SixelXTerm
+       SIXELSRC = graphics_sixel.c
+       SIXELOBJ = graphics_sixel.o
 #endif
 #ifdef TraceXTerm
        TRACESRC = trace.c
@@ -204,17 +200,17 @@ TERMCAPDEFINES=-DUSE_TERMINFO -DHAVE_TIGETSTR
           SRCS1 = button.c cachedGCs.c charproc.c charsets.c cursor.c \
 		  data.c doublechr.c fontutils.c input.c \
 		  linedata.c menu.c misc.c print.c ptydata.c scrollback.c \
-		  screen.c scrollbar.c tabs.c util.c xstrings.c xtermcap.c \
-		  TekPrsTbl.c Tekproc.c VTPrsTbl.c \
-		  $(MAINSRC) $(EXTRASRC) $(UTF8SRC) $(TRACESRC)
+		  screen.c scrollbar.c tabs.c util.c version.c xstrings.c \
+		  xtermcap.c TekPrsTbl.c Tekproc.c VTPrsTbl.c \
+		  $(MAINSRC) $(EXTRASRC) $(UTF8SRC) $(SIXELSRC) $(TRACESRC)
           OBJS1 = button.o cachedGCs.o charproc.o charsets.o cursor.o \
 		  data.o doublechr.o fontutils.o input.o \
 		  linedata.o menu.o misc.o print.o ptydata.o scrollback.o \
-		  screen.o scrollbar.o tabs.o util.o xstrings.o xtermcap.o \
-		  TekPrsTbl.o Tekproc.o VTPrsTbl.o \
-		  $(MAINOBJ) $(EXTRAOBJ) $(UTF8OBJ) $(TRACEOBJ)
-          SRCS2 = resize.c xstrings.c
-          OBJS2 = resize.o xstrings.o
+		  screen.o scrollbar.o tabs.o util.o version.o xstrings.o \
+		  xtermcap.o TekPrsTbl.o Tekproc.o VTPrsTbl.o \
+		  $(MAINOBJ) $(EXTRAOBJ) $(UTF8OBJ) $(SIXELOBJ) $(TRACEOBJ)
+          SRCS2 = resize.c version.c xstrings.c
+          OBJS2 = resize.o version.o xstrings.o
            SRCS = $(SRCS1) $(SRCS2)
            OBJS = $(OBJS1) $(OBJS2)
        PROGRAMS = ProgramTargetName(resize) ProgramTargetName(xterm)

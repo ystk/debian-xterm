@@ -1,7 +1,7 @@
-/* $XTermId: main.h,v 1.57 2011/12/14 22:43:02 tom Exp $ */
+/* $XTermId: main.h,v 1.61 2013/04/24 08:52:20 tom Exp $ */
 
 /*
- * Copyright 2000-2010,2011 by Thomas E. Dickey
+ * Copyright 2000-2012,2013 by Thomas E. Dickey
  *
  *                         All Rights Reserved
  *
@@ -143,6 +143,18 @@
 
 #ifndef DEF_BACKARO_ERASE
 #define DEF_BACKARO_ERASE	False
+#endif
+
+#ifndef DEF_BACKARO_BS
+#define DEF_BACKARO_BS		True
+#endif
+
+#ifndef DEF_ALT_SENDS_ESC
+#define DEF_ALT_SENDS_ESC	False
+#endif
+
+#ifndef DEF_META_SENDS_ESC
+#define DEF_META_SENDS_ESC	False
 #endif
 
 #ifndef DEF_8BIT_META

@@ -1,7 +1,7 @@
-/* $XTermId: linedata.c,v 1.80 2011/09/11 14:59:39 tom Exp $ */
+/* $XTermId: linedata.c,v 1.82 2013/02/08 00:11:16 tom Exp $ */
 
 /*
- * Copyright 2009-2010,2011 by Thomas E. Dickey
+ * Copyright 2009-2012,2013 by Thomas E. Dickey
  *
  *                         All Rights Reserved
  *
@@ -31,7 +31,6 @@
  */
 
 #include <xterm.h>
-#include <data.h>		/* FIXME - needed for 'term' */
 
 #include <assert.h>
 

@@ -1,7 +1,7 @@
-/* $XTermId: xstrings.c,v 1.47 2011/09/11 20:20:12 tom Exp $ */
+/* $XTermId: xstrings.c,v 1.60 2014/05/03 12:46:53 tom Exp $ */
 
 /*
- * Copyright 2000-2010,2011 by Thomas E. Dickey
+ * Copyright 2000-2013,2014 by Thomas E. Dickey
  *
  *                         All Rights Reserved
  *
@@ -64,10 +64,6 @@ x_basename(char *name)
     char *cp;
 
     cp = strrchr(name, '/');
-#ifdef __UNIXOS2__
-    if (cp == 0)
-	cp = strrchr(name, '\\');
-#endif
     return (cp ? cp + 1 : name);
 }
 
@@ -141,7 +137,39 @@ x_encode_hex(const char *source)
 char *
 x_getenv(const char *name)
 {
-    return x_strdup(x_nonempty(getenv(name)));
+    char *result;
+    result = x_strdup(x_nonempty(getenv(name)));
+    TRACE2(("getenv(%s) %s\n", name, result));
+    return result;
+}
+
+static char *
+login_alias(char *login_name, uid_t uid, struct passwd *in_out)
+{
+    /*
+     * If the logon-name differs from the value we get by looking in the
+     * password file, check if it does correspond to the same uid.  If so,
+     * allow that as an alias for the uid.
+     */
+    if (!IsEmpty(login_name)
+	&& strcmp(login_name, in_out->pw_name)) {
+	struct passwd pw2;
+
+	if (x_getpwnam(login_name, &pw2)) {
+	    uid_t uid2 = pw2.pw_uid;
+	    struct passwd pw3;
+
+	    if (x_getpwuid(uid, &pw3)
+		&& ((uid_t) pw3.pw_uid == uid2)) {
+		/* use the other passwd-data including shell */
+		alloc_pw(in_out, &pw2);
+	    } else {
+		free(login_name);
+		login_name = NULL;
+	    }
+	}
+    }
+    return login_name;
 }
 
 /*
@@ -155,52 +183,31 @@ x_getlogin(uid_t uid, struct passwd *in_out)
 {
     char *login_name = NULL;
 
+    login_name = login_alias(x_getenv("LOGNAME"), uid, in_out);
+    if (IsEmpty(login_name)) {
+	free(login_name);
+	login_name = login_alias(x_getenv("USER"), uid, in_out);
+    }
 #ifdef HAVE_GETLOGIN
-    login_name = getlogin();
-#endif
-
     /*
      * Of course getlogin() will fail if we're started from a window-manager,
-     * since there's no controlling terminal to fuss with.  In that case, try
-     * to get something useful from the user's $LOGNAME or $USER environment
-     * variables.
+     * since there's no controlling terminal to fuss with.  For that reason, we
+     * tried first to get something useful from the user's $LOGNAME or $USER
+     * environment variables.
      */
-    if (login_name == NULL) {
-	login_name = x_getenv("LOGNAME");
-	if (login_name == NULL)
-	    login_name = x_getenv("USER");
+    if (IsEmpty(login_name)) {
+	TRACE2(("...try getlogin\n"));
+	free(login_name);
+	login_name = login_alias(x_strdup(getlogin()), uid, in_out);
+    }
+#endif
+
+    if (IsEmpty(login_name)) {
+	free(login_name);
+	login_name = x_strdup(in_out->pw_name);
     }
 
-    /*
-     * If the logon-name differs from the value we get by looking in the
-     * password file, check if it does correspond to the same uid.  If so,
-     * allow that as an alias for the uid.
-     */
-    if (login_name != NULL
-	&& strcmp(login_name, in_out->pw_name)) {
-	struct passwd pw2;
-
-	if (x_getpwnam(login_name, &pw2)) {
-	    uid_t uid2 = pw2.pw_uid;
-	    struct passwd pw3;
-
-	    if (!x_getpwuid(uid, &pw3)
-		|| (uid_t) pw3.pw_uid != uid2) {
-		login_name = NULL;
-	    } else {
-		/* use the other passwd-data including shell */
-		alloc_pw(in_out, &pw2);
-	    }
-	} else {
-	    (void) x_getpwuid(uid, in_out);
-	}
-    }
-
-    if (login_name == NULL)
-	login_name = in_out->pw_name;
-    if (login_name != NULL)
-	login_name = x_strdup(login_name);
-
+    TRACE2(("x_getloginid ->%s\n", NonNull(login_name)));
     return login_name;
 }
 
@@ -209,12 +216,12 @@ x_getlogin(uid_t uid, struct passwd *in_out)
  * result via the given pointer.  On failure, wipes the data to prevent use.
  */
 Boolean
-x_getpwnam(const char *name, struct passwd * result)
+x_getpwnam(const char *name, struct passwd *result)
 {
     struct passwd *ptr = getpwnam(name);
     Boolean code;
 
-    if (OkPasswd(ptr)) {
+    if (ptr != 0 && OkPasswd(ptr)) {
 	code = True;
 	alloc_pw(result, ptr);
     } else {
@@ -229,18 +236,19 @@ x_getpwnam(const char *name, struct passwd * result)
  * result via the given pointer.  On failure, wipes the data to prevent use.
  */
 Boolean
-x_getpwuid(uid_t uid, struct passwd * result)
+x_getpwuid(uid_t uid, struct passwd *result)
 {
     struct passwd *ptr = getpwuid((uid_t) uid);
     Boolean code;
 
-    if (OkPasswd(ptr)) {
+    if (ptr != 0 && OkPasswd(ptr)) {
 	code = True;
 	alloc_pw(result, ptr);
     } else {
 	code = False;
 	memset(result, 0, sizeof(*result));
     }
+    TRACE2(("x_getpwuid(%d) %d\n", (int) uid, (int) code));
     return code;
 }
 
@@ -281,7 +289,7 @@ x_nonempty(String s)
 String
 x_skip_blanks(String s)
 {
-    while (isspace(CharOf(*s)))
+    while (IsSpace(CharOf(*s)))
 	++s;
     return s;
 }
@@ -289,7 +297,15 @@ x_skip_blanks(String s)
 String
 x_skip_nonblanks(String s)
 {
-    while (*s != '\0' && !isspace(CharOf(*s)))
+    while (*s != '\0' && !IsSpace(CharOf(*s)))
+	++s;
+    return s;
+}
+
+static const char *
+skip_blanks(const char *s)
+{
+    while (IsSpace(CharOf(*s)))
 	++s;
     return s;
 }
@@ -303,43 +319,61 @@ x_splitargs(const char *command)
     char **result = 0;
 
     if (command != 0) {
-	char *blob = x_strdup(command);
+	const char *first = skip_blanks(command);
+	char *blob = x_strdup(first);
 	size_t count;
 	size_t n;
 	int state;
 	int pass;
 
-	for (pass = 0; pass < 2; ++pass) {
-	    for (n = count = 0, state = 0; command[n] != '\0'; ++n) {
-		switch (state) {
-		case 0:
-		    if (!isspace(CharOf(command[n]))) {
-			state = 1;
-			if (pass)
-			    result[count] = blob + n;
-			++count;
-		    } else {
-			blob[n] = '\0';
+	if (blob != 0) {
+	    for (pass = 0; pass < 2; ++pass) {
+		for (n = count = 0, state = 0; first[n] != '\0'; ++n) {
+		    switch (state) {
+		    case 0:
+			if (!IsSpace(CharOf(first[n]))) {
+			    state = 1;
+			    if (pass)
+				result[count] = blob + n;
+			    ++count;
+			} else {
+			    blob[n] = '\0';
+			}
+			break;
+		    case 1:
+			if (IsSpace(CharOf(first[n]))) {
+			    blob[n] = '\0';
+			    state = 0;
+			}
+			break;
 		    }
-		    break;
-		case 1:
-		    if (isspace(CharOf(command[n]))) {
-			blob[n] = '\0';
-			state = 0;
-		    }
-		    break;
 		}
-	    }
-	    if (!pass) {
-		result = TypeCallocN(char *, count + 1);
-		if (!result)
-		    break;
+		if (!pass) {
+		    result = TypeCallocN(char *, count + 1);
+		    if (!result) {
+			free(blob);
+			break;
+		    }
+		}
 	    }
 	}
     } else {
 	result = TypeCalloc(char *);
     }
     return result;
+}
+
+/*
+ * Free storage allocated by x_splitargs().
+ */
+void
+x_freeargs(char **argv)
+{
+    if (argv != 0) {
+	if (*argv != 0)
+	    free(*argv);
+	free(argv);
+    }
 }
 
 int
@@ -397,7 +431,7 @@ x_strindex(char *s1, const char *s2)
     char *s3;
     size_t s2len = strlen(s2);
 
-    while ((s3 = strchr(s1, *s2)) != NULL) {
+    while ((s3 = (strchr) (s1, *s2)) != NULL) {
 	if (strncmp(s3, s2, s2len) == 0)
 	    return (s3);
 	s1 = ++s3;
@@ -417,17 +451,19 @@ x_strtrim(const char *source)
 
     if (source != 0 && *source != '\0') {
 	char *t = x_strdup(source);
-	s = t;
-	d = s;
-	while (isspace(CharOf(*s)))
-	    ++s;
-	while ((*d++ = *s++) != '\0') {
-	    ;
-	}
-	if (*t != '\0') {
-	    s = t + strlen(t);
-	    while (s != t && isspace(CharOf(s[-1]))) {
-		*--s = '\0';
+	if (t != 0) {
+	    s = t;
+	    d = s;
+	    while (IsSpace(CharOf(*s)))
+		++s;
+	    while ((*d++ = *s++) != '\0') {
+		;
+	    }
+	    if (*t != '\0') {
+		s = t + strlen(t);
+		while (s != t && IsSpace(CharOf(s[-1]))) {
+		    *--s = '\0';
+		}
 	    }
 	}
 	result = t;

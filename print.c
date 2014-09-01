@@ -1,7 +1,7 @@
-/* $XTermId: print.c,v 1.139 2011/09/11 14:59:36 tom Exp $ */
+/* $XTermId: print.c,v 1.152 2014/06/13 00:36:51 tom Exp $ */
 
 /*
- * Copyright 1997-2010,2011 by Thomas E. Dickey
+ * Copyright 1997-2013,2014 by Thomas E. Dickey
  *
  *                         All Rights Reserved
  *
@@ -74,7 +74,7 @@ static void send_SGR(XtermWidget /* xw */ ,
 static void stringToPrinter(XtermWidget /* xw */ ,
 			    const char * /*str */ );
 
-void
+static void
 closePrinter(XtermWidget xw GCC_UNUSED)
 {
     if (xtermHasPrinter(xw) != 0) {
@@ -87,19 +87,22 @@ closePrinter(XtermWidget xw GCC_UNUSED)
 #endif
 
 	if (SPS.fp != 0) {
-	    fclose(SPS.fp);
+	    DEBUG_MSG("closePrinter\n");
+	    pclose(SPS.fp);
 	    TRACE(("closed printer, waiting...\n"));
 #ifdef VMS			/* This is a quick hack, really should use
 				   spawn and check status or system services
 				   and go straight to the queue */
 	    (void) system(pcommand);
 #else /* VMS */
-	    while (nonblocking_wait() > 0)
-#endif /* VMS */
+	    while (nonblocking_wait() > 0) {
 		;
+	    }
+#endif /* VMS */
 	    SPS.fp = 0;
 	    SPS.isOpen = False;
 	    TRACE(("closed printer\n"));
+	    DEBUG_MSG("...closePrinter (done)\n");
 	}
     }
 }
@@ -121,12 +124,12 @@ printCursorLine(XtermWidget xw)
  * characters that xterm would allow as a selection (which may include blanks).
  */
 static void
-printLine(XtermWidget xw, int row, unsigned chr, PrinterFlags * p)
+printLine(XtermWidget xw, int row, unsigned chr, PrinterFlags *p)
 {
     TScreen *screen = TScreenOf(xw);
     int inx = ROW2INX(screen, row);
     LineData *ld;
-    Char attr = 0;
+    IAttr attr = 0;
     unsigned ch;
     int last = MaxCols(screen);
     int col;
@@ -177,7 +180,7 @@ printLine(XtermWidget xw, int row, unsigned chr, PrinterFlags * p)
 #endif
 		)
 		&& ch) {
-		attr = CharOf(ld->attribs[col] & SGR_MASK);
+		attr = ld->attribs[col] & SGR_MASK;
 #if OPT_PRINT_COLORS
 		last_fg = fg;
 		last_bg = bg;
@@ -249,7 +252,7 @@ printLine(XtermWidget xw, int row, unsigned chr, PrinterFlags * p)
 #define PrintNewLine() (unsigned) (((top < bot) || p->printer_newline) ? '\n' : '\0')
 
 static void
-printLines(XtermWidget xw, int top, int bot, PrinterFlags * p)
+printLines(XtermWidget xw, int top, int bot, PrinterFlags *p)
 {
     TRACE(("printLines, rows %d..%d\n", top, bot));
     while (top <= bot) {
@@ -259,7 +262,7 @@ printLines(XtermWidget xw, int top, int bot, PrinterFlags * p)
 }
 
 void
-xtermPrintScreen(XtermWidget xw, Bool use_DECPEX, PrinterFlags * p)
+xtermPrintScreen(XtermWidget xw, Bool use_DECPEX, PrinterFlags *p)
 {
     if (XtIsRealized((Widget) xw)) {
 	TScreen *screen = TScreenOf(xw);
@@ -294,13 +297,14 @@ xtermPrintScreen(XtermWidget xw, Bool use_DECPEX, PrinterFlags * p)
  *	8 = saved lines
  */
 void
-xtermPrintEverything(XtermWidget xw, PrinterFlags * p)
+xtermPrintEverything(XtermWidget xw, PrinterFlags *p)
 {
     TScreen *screen = TScreenOf(xw);
     Boolean was_open = SPS.isOpen;
     int save_which = screen->whichBuf;
     int done_which = 0;
 
+    DEBUG_MSG("xtermPrintEverything\n");
     if (p->print_everything) {
 	if (p->print_everything & 8) {
 	    printLines(xw, -screen->savedlines, -(screen->topline + 1), p);
@@ -340,7 +344,7 @@ xtermPrintEverything(XtermWidget xw, PrinterFlags * p)
 }
 
 static void
-send_CharSet(XtermWidget xw, LineData * ld)
+send_CharSet(XtermWidget xw, LineData *ld)
 {
 #if OPT_DEC_CHRSET
     const char *msg = 0;
@@ -375,6 +379,12 @@ send_SGR(XtermWidget xw, unsigned attr, unsigned fg, unsigned bg)
     strcpy(msg, "\033[0");
     if (attr & BOLD)
 	strcat(msg, ";1");
+#if OPT_WIDE_ATTRS
+    if (attr & ATR_FAINT)
+	strcat(msg, ";2");
+    if (attr & ATR_ITALIC)
+	strcat(msg, ";3");
+#endif
     if (attr & UNDERLINE)
 	strcat(msg, ";4");	/* typo? DEC documents this as '2' */
     if (attr & BLINK)
@@ -437,6 +447,7 @@ charToPrinter(XtermWidget xw, unsigned chr)
 		    SysError(ERROR_FORK);
 
 		if (my_pid == 0) {
+		    DEBUG_MSG("charToPrinter: subprocess for printer\n");
 		    TRACE_CLOSE();
 		    close(my_pipe[1]);	/* printer is silent */
 		    close(screen->respond);
@@ -454,19 +465,39 @@ charToPrinter(XtermWidget xw, unsigned chr)
 			exit(1);
 
 		    SPS.fp = popen(SPS.printer_command, "w");
-		    input = fdopen(my_pipe[0], "r");
-		    while ((c = fgetc(input)) != EOF) {
-			fputc(c, SPS.fp);
-			if (isForm(c))
-			    fflush(SPS.fp);
+		    if (SPS.fp != 0) {
+			DEBUG_MSG("charToPrinter: opened pipe to printer\n");
+			input = fdopen(my_pipe[0], "r");
+			clearerr(input);
+			for (;;) {
+			    if (ferror(input)) {
+				DEBUG_MSG("charToPrinter: break on ferror\n");
+				break;
+			    } else if (feof(input)) {
+				DEBUG_MSG("charToPrinter: break on feof\n");
+				break;
+			    } else if ((c = fgetc(input)) == EOF) {
+				DEBUG_MSG("charToPrinter: break on EOF\n");
+				break;
+			    }
+			    fputc(c, SPS.fp);
+			    if (isForm(c))
+				fflush(SPS.fp);
+			}
+			DEBUG_MSG("charToPrinter: calling pclose\n");
+			pclose(SPS.fp);
 		    }
-		    pclose(SPS.fp);
 		    exit(0);
 		} else {
 		    close(my_pipe[0]);	/* won't read from printer */
-		    SPS.fp = fdopen(my_pipe[1], "w");
-		    TRACE(("opened printer from pid %d/%d\n",
-			   (int) getpid(), (int) my_pid));
+		    if ((SPS.fp = fdopen(my_pipe[1], "w")) != 0) {
+			DEBUG_MSG("charToPrinter: opened printer in parent\n");
+			TRACE(("opened printer from pid %d/%d\n",
+			       (int) getpid(), (int) my_pid));
+		    } else {
+			TRACE(("failed to open printer:%s\n", strerror(errno)));
+			DEBUG_MSG("charToPrinter: could not open in parent\n");
+		    }
 		}
 	    }
 #endif
@@ -641,13 +672,37 @@ xtermPrinterControl(XtermWidget xw, int chr)
 
 /*
  * If there is no printer command, we will ignore printer controls.
+ *
+ * If we do have a printer command, we still have to verify that it will
+ * (perhaps) work if we pass it to popen().  At a minimum, the program
+ * must exist and be executable.  If not, warn and disable the feature.
  */
 Bool
 xtermHasPrinter(XtermWidget xw)
 {
     TScreen *screen = TScreenOf(xw);
+    Bool result = SPS.printer_checked;
 
-    return (strlen(SPS.printer_command) != 0);
+    if (strlen(SPS.printer_command) != 0 && !result) {
+	char **argv = x_splitargs(SPS.printer_command);
+	if (argv) {
+	    if (argv[0]) {
+		char *myShell = xtermFindShell(argv[0], False);
+		if (myShell == 0) {
+		    xtermWarning("No program found for printerCommand: %s\n", SPS.printer_command);
+		    SPS.printer_command = x_strdup("");
+		} else {
+		    free(myShell);
+		    SPS.printer_checked = True;
+		    result = True;
+		}
+	    }
+	    x_freeargs(argv);
+	}
+	TRACE(("xtermHasPrinter:%d\n", result));
+    }
+
+    return result;
 }
 
 #define showPrinterControlMode(mode) \
@@ -677,7 +732,7 @@ setPrinterControlMode(XtermWidget xw, int mode)
 }
 
 PrinterFlags *
-getPrinterFlags(XtermWidget xw, String * params, Cardinal *param_count)
+getPrinterFlags(XtermWidget xw, String *params, Cardinal *param_count)
 {
     /* *INDENT-OFF* */
     static const struct {

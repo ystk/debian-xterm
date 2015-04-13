@@ -1,0 +1,47 @@
+Description: Fix buffer overflow in the -S option
+ Change passedPty[] to an allocated string to ensure it is long enough for
+ the -S option value.
+Author: Thomas Dickey <dickey@his.com>
+Bug-Debian: https://bugs.debian.org/779397
+
+---
+ main.c |    8 +++++---
+ 1 file changed, 5 insertions(+), 3 deletions(-)
+
+--- a/main.c
++++ b/main.c
+@@ -779,7 +779,8 @@ static char etc_wtmp[] = WTMP_FILENAME;
+ static char bin_login[] = LOGIN_FILENAME;
+ #endif
+ 
+-static char passedPty[PTYCHARLEN + 1];	/* name if pty if slave */
++static char noPassedPty[2];
++static char *passedPty = noPassedPty;	/* name if pty if slave */
+ 
+ #if defined(TIOCCONS) || defined(SRIOCSREDIR)
+ static int Console;
+@@ -1760,7 +1761,8 @@ ParseSccn(char *option)
+     char *leaf = x_basename(option);
+     Bool code = False;
+ 
+-    if (leaf != option) {
++    passedPty = x_strdup(option);
++    if (leaf != option) {
+ 	if (leaf - option > 0
+ 	    && isdigit(CharOf(*leaf))
+ 	    && sscanf(leaf, "%d", &am_slave) == 1) {
+@@ -1771,13 +1773,13 @@ ParseSccn(char *option)
+ 	     * the /dev/pts/XXX value, but since we do not need to reopen it,
+ 	     * it is useful mainly for display in a "ps -ef".
+ 	     */
+-	    strncpy(passedPty, option, len);
+ 	    passedPty[len] = 0;
+ 	    code = True;
+ 	}
+     } else {
+ 	code = (sscanf(option, "%c%c%d",
+ 		       passedPty, passedPty + 1, &am_slave) == 3);
++	passedPty[2] = '\0';
+     }
+     TRACE(("ParseSccn(%s) = '%s' %d (%s)\n", option,
+ 	   passedPty, am_slave, code ? "OK" : "ERR"));

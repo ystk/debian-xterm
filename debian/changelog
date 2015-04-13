@@ -1,3 +1,46 @@
+xterm (312-2) unstable; urgency=medium
+
+  * Cherry-pick a patch from xterm 314: change passedPty[] to an
+    allocated string to ensure it is long enough for the -S option
+    value (Closes: #779397).
+
+ -- Sven Joachim <svenjoac@gmx.de>  Sun, 01 Mar 2015 11:45:01 +0100
+
+xterm (312-1) unstable; urgency=medium
+
+  * New upstream release.
+    - Undo change to do_select_regex() in xterm 311 (Closes: #762978).
+
+ -- Sven Joachim <svenjoac@gmx.de>  Mon, 29 Sep 2014 17:16:25 +0200
+
+xterm (311-1) unstable; urgency=low
+
+  * New upstream release.
+    - Mention xclip in manpage as an alternative workaround for copying
+      clipboard data, noting that selectToClipboard is the recommended
+      approach (Closes: #639094).
+    - Correct initialization for regular-expression feature of
+      exec-selectable and insert-selectable actions.
+      Modify logic for exec-formatted and insert-formatted actions to
+      ensure that the formatting occurs just after the selection is
+      received (Closes: #758633).
+    - Account for state of reverse-video in special case of cursor coloring
+      (Closes: #759734).
+    - Enable the "Escape Sequence" menu entry when an OSC 50 is received.
+      Also disable it if the escape sequence specifies no font
+      (Closes: #760208).
+    - Improve fix for the fontsel menu entry from xterm 304: because the
+      recovery used the "current font", it would fail if one first selected
+      a valid font, then an invalid font (Closes: #760207).
+
+ -- Sven Joachim <svenjoac@gmx.de>  Mon, 22 Sep 2014 17:55:43 +0200
+
+xterm (310-1) unstable; urgency=low
+
+  * New upstream release.
+
+ -- Sven Joachim <svenjoac@gmx.de>  Sat, 30 Aug 2014 11:26:09 +0200
+
 xterm (308-1) unstable; urgency=medium
 
   * New upstream release.

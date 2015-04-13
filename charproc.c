@@ -1,4 +1,4 @@
-/* $XTermId: charproc.c,v 1.1363 2014/06/13 00:53:14 tom Exp $ */
+/* $XTermId: charproc.c,v 1.1370 2014/09/15 23:39:44 tom Exp $ */
 
 /*
  * Copyright 1999-2013,2014 by Thomas E. Dickey
@@ -94,6 +94,8 @@
 #include <X11/Xaw/XawImP.h>
 #elif defined(HAVE_LIB_XAW3D)
 #include <X11/Xaw3d/XawImP.h>
+#elif defined(HAVE_LIB_XAW3DXFT)
+#include <X11/Xaw3dxft/XawImP.h>
 #elif defined(HAVE_LIB_NEXTAW)
 #include <X11/neXtaw/XawImP.h>
 #elif defined(HAVE_LIB_XAWPLUS)
@@ -544,7 +546,7 @@ static XtResource xterm_resources[] =
 #if OPT_BLINK_CURS
     Bres(XtNcursorBlink, XtCCursorBlink, screen.cursor_blink, False),
 #endif
-    Bres(XtNcursorUnderline, XtCCursorUnderline, screen.cursor_underline, False),
+    Bres(XtNcursorUnderLine, XtCCursorUnderLine, screen.cursor_underline, False),
 
 #if OPT_BLINK_TEXT
     Bres(XtNshowBlinkAsBold, XtCCursorBlink, screen.blink_as_bold, DEFBLINKASBOLD),
@@ -3394,7 +3396,8 @@ doparsing(XtermWidget xw, unsigned c, struct ParseState *sp)
 		    change = False;
 		    break;
 		}
-
+		TRACE(("cursor_shape:%d blinks:%s\n",
+		       screen->cursor_shape, BtoS(blinks)));
 		if (change) {
 		    xtermSetCursorBox(screen);
 		    screen->cursor_blink_esc = blinks;
@@ -7495,6 +7498,11 @@ initializeKeyboardType(XtermWidget xw)
 	: keyboardIsDefault;
 }
 
+#define InitCursorShape(target, source) \
+    target->cursor_shape = source->cursor_underline \
+	? CURSOR_UNDERLINE \
+	: CURSOR_BLOCK
+
 /* ARGSUSED */
 static void
 VTInitialize(Widget wrequest,
@@ -7724,10 +7732,12 @@ VTInitialize(Widget wrequest,
     init_Ires(screen.blink_off);
     TScreenOf(wnew)->cursor_blink_res = TScreenOf(wnew)->cursor_blink;
 #endif
+    init_Bres(screen.cursor_underline);
     /* resources allow for underline or block, not (yet) bar */
-    TScreenOf(wnew)->cursor_shape = request->screen.cursor_underline
-	? CURSOR_UNDERLINE
-	: CURSOR_BLOCK;
+    InitCursorShape(TScreenOf(wnew), TScreenOf(request));
+    TRACE(("cursor_shape:%d blinks:%s\n",
+	   TScreenOf(wnew)->cursor_shape,
+	   BtoS(TScreenOf(wnew)->cursor_blink)));
 #if OPT_BLINK_TEXT
     init_Ires(screen.blink_as_bold);
 #endif
@@ -7962,8 +7972,8 @@ VTInitialize(Widget wrequest,
     DefaultFontNames[fWide] = x_strdup(wnew->misc.default_font.f_w);
     DefaultFontNames[fWBold] = x_strdup(wnew->misc.default_font.f_wb);
 #endif
-    TScreenOf(wnew)->MenuFontName(fontMenu_fontescape) = NULL;
-    TScreenOf(wnew)->MenuFontName(fontMenu_fontsel) = NULL;
+    TScreenOf(wnew)->EscapeFontName() = NULL;
+    TScreenOf(wnew)->SelectFontName() = NULL;
 
     TScreenOf(wnew)->menu_font_number = fontMenu_default;
     init_Sres(screen.initial_font);
@@ -9820,7 +9830,9 @@ ShowCursor(void)
 		}
 	    }
 	}
-	if (T_COLOR(screen, TEXT_CURSOR) == xw->dft_foreground) {
+	if (T_COLOR(screen, TEXT_CURSOR) == (reversed
+					     ? xw->dft_background
+					     : xw->dft_foreground)) {
 	    setCgsBack(xw, currentWin, currentCgs, fg_pix);
 	}
 	setCgsFore(xw, currentWin, currentCgs, bg_pix);
@@ -9896,7 +9908,9 @@ ShowCursor(void)
 	     * Set up a new request.
 	     */
 	    if (filled) {
-		if (T_COLOR(screen, TEXT_CURSOR) == xw->dft_foreground) {
+		if (T_COLOR(screen, TEXT_CURSOR) == (reversed
+						     ? xw->dft_background
+						     : xw->dft_foreground)) {
 		    setCgsBack(xw, currentWin, currentCgs, fg_pix);
 		}
 		setCgsFore(xw, currentWin, currentCgs, bg_pix);
@@ -10366,7 +10380,10 @@ ReallyReset(XtermWidget xw, Bool full, Bool saved)
 
     /* make cursor visible */
     screen->cursor_set = ON;
-    screen->cursor_shape = CURSOR_BLOCK;
+    InitCursorShape(screen, screen);
+    TRACE(("cursor_shape:%d blinks:%s\n",
+	   screen->cursor_shape,
+	   BtoS(screen->cursor_blink)));
 
     /* reset scrolling region */
     reset_margins(screen);
@@ -10751,7 +10768,7 @@ DoSetSelectedFont(Widget w,
     } else {
 	Boolean failed = False;
 	int oldFont = TScreenOf(xw)->menu_font_number;
-	String save = TScreenOf(xw)->MenuFontName(fontMenu_fontsel);
+	String save = TScreenOf(xw)->SelectFontName();
 	char *val;
 	char *test = 0;
 	char *used = 0;
@@ -10781,14 +10798,14 @@ DoSetSelectedFont(Widget w,
 		&& used != 0
 		&& !strchr(used, '\n')
 		&& (test = x_strdup(used)) != 0) {
-		TScreenOf(xw)->MenuFontName(fontMenu_fontsel) = test;
+		TScreenOf(xw)->SelectFontName() = test;
 		if (!xtermLoadFont(term,
 				   xtermFontName(used),
 				   True,
 				   fontMenu_fontsel)) {
 		    failed = True;
 		    free(test);
-		    TScreenOf(xw)->MenuFontName(fontMenu_fontsel) = save;
+		    TScreenOf(xw)->SelectFontName() = save;
 		}
 	    } else {
 		failed = True;
@@ -10817,7 +10834,7 @@ FindFontSelection(XtermWidget xw, const char *atom_name, Bool justprobe)
     Atom target;
 
     if (!atom_name)
-	atom_name = (screen->mappedSelect
+	atom_name = ((screen->mappedSelect && atomCount)
 		     ? screen->mappedSelect[0]
 		     : "PRIMARY");
     TRACE(("FindFontSelection(%s)\n", atom_name));
@@ -10837,10 +10854,10 @@ FindFontSelection(XtermWidget xw, const char *atom_name, Bool justprobe)
 
     target = XmuInternAtom(XtDisplay(xw), *pAtom);
     if (justprobe) {
-	screen->MenuFontName(fontMenu_fontsel) =
+	screen->SelectFontName() =
 	    XGetSelectionOwner(XtDisplay(xw), target) ? _Font_Selected_ : 0;
 	TRACE(("...selected fontname '%s'\n",
-	       NonNull(screen->MenuFontName(fontMenu_fontsel))));
+	       NonNull(screen->SelectFontName())));
     } else {
 	XtGetSelectionValue((Widget) xw, target, XA_STRING,
 			    DoSetSelectedFont, NULL,

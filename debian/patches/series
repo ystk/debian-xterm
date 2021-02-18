@@ -2,3 +2,4 @@
 902_windowops.diff
 904_fontops.diff
 905_passedPty.diff
+CVE-2021-27135.patch

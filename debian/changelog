@@ -1,3 +1,12 @@
+xterm (312-2+deb8u1) jessie-security; urgency=high
+
+  * Non-maintainer upload by the ELTS team.
+  * Add patch to correct upper-limit for selection
+    buffer, accounting for combining characters.
+    (Fixes: CVE-2021-27135) (Closes: #982439)
+
+ -- Utkarsh Gupta <utkarsh@debian.org>  Sat, 13 Feb 2021 21:58:08 +0530
+
 xterm (312-2) unstable; urgency=medium
 
   * Cherry-pick a patch from xterm 314: change passedPty[] to an

@@ -3,3 +3,4 @@
 904_fontops.diff
 905_passedPty.diff
 CVE-2021-27135.patch
+CVE-2022-24130.patch

@@ -1,3 +1,19 @@
+xterm (312-2+deb8u4) jessie-security; urgency=high
+
+  * Non-maintainer upload by the ELTS team.
+  * Fix CVE-2022-24130's patch.
+
+ -- Utkarsh Gupta <utkarsh@debian.org>  Mon, 07 Feb 2022 21:29:15 +0530
+
+xterm (312-2+deb8u3) jessie-security; urgency=high
+
+  * Non-maintainer upload by the ELTS team.
+  * Add patch to check for out-of-bounds condition while drawing
+    sixels, and quit that operation (reported by Nick Black).
+    (Fixes: CVE-2022-24130) (Closes: #1004689)
+
+ -- Utkarsh Gupta <utkarsh@debian.org>  Sun, 06 Feb 2022 20:06:15 +0530
+
 xterm (312-2+deb8u2) jessie-security; urgency=high
 
   * Non-maintainer upload by the ELTS team.
